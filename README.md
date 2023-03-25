@@ -5,6 +5,7 @@
 - [ ] Mask R-CNN / PoseCNN to segment, then only do loss on the segmented part 
 - [ ] Use PoseCNN to estimate initial guess of camera pose 
 
+- [x] Main file [pose_estimation.ipynb](pose_estimation.ipynb)
 
 ### [Project Page](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI&feature=emb_logo) | [Paper](https://arxiv.org/pdf/2012.05877.pdf)
 
@@ -12,26 +13,15 @@
 
 PyTorch implementation of iNeRF, an RGB-only method that inverts neural radiance fields (NeRFs) for 6DoF pose estimation.
 
-[iNeRF Inverting Neural Radiance Fields for Pose Estimation](https://yenchenlin.me/inerf/)  
- [Lin Yen-Chen](https://yenchenlin.me/)<sup>1</sup>,
- [Pete Florence](http://www.peteflorence.com/)<sup>2</sup>,
- [Jonathan T. Barron](http://jonbarron.info/)<sup>2</sup>,
- [Alberto Rodriguez](https://meche.mit.edu/people/faculty/ALBERTOR@MIT.EDU)<sup>1</sup>,
- [Phillip Isola](http://web.mit.edu/phillipi/)<sup>1</sup>,
-  [Tsung-Yi Lin](https://scholar.google.com/citations?user=_BPdgV0AAAAJ&hl=en)<sup>2</sup><br>
- <sup>1</sup>MIT, <sup>2</sup>Google
- <br>
- [IROS 2021](https://www.iros2021.org/)
-
 ## Overview
 
 This preliminary codebase currently only shows how to apply iNeRF with pixelNeRF. However, iNeRF can work with the original NeRF as well.
 
 ## Environment setup
 
-To start, create the environment using conda:
+To start, install `pytorch` and `torchvision` according to your own GPU version, and then create the environment using conda:
+- Yulun: tested with `pytorch==1.11` and `torchvision==0.12`
 ```sh
-cd pixel-nerf
 conda env create -f environment.yml
 conda activate pixelnerf
 pip install mediapy
@@ -43,15 +33,9 @@ Please make sure you have up-to-date NVIDIA drivers supporting CUDA 10.2 at leas
 ## Quick start
 
 1. Download all pixelNeRF's pretrained weight files from [here](https://drive.google.com/file/d/1UO_rL201guN6euoWkCOn-XpqR2e8o6ju/view?usp=sharing).
-Extract this to `./pixel-nerf/checkpoints/`, so that `./pixel-nerf/checkpoints/srn_car/pixel_nerf_latest` exists.
+Create and extract it to `./checkpoints/` folder, so that `./checkpoints/srn_car/pixel_nerf_latest` exists.
 
-2. Launch the Jupyter notebook.
-```sh
-cd pixel-nerf
-jupyter notebook
-```
-
-3. Open `pose_estimation.ipynb` and run through it. You can preview the results [here](https://github.com/yenchenlin/iNeRF-public/blob/master/pixel-nerf/pose_estimation.ipynb). In the following, we show the overlay of images rendered with our predicted poses and the target image.
+1. Open `pose_estimation.ipynb` and run through it. You can preview the results [here](https://github.com/yenchenlin/iNeRF-public/blob/master/pixel-nerf/pose_estimation.ipynb). In the following, we show the overlay of images rendered with our predicted poses and the target image.
 
 <img src="https://user-images.githubusercontent.com/7057863/161636178-c4f36310-eb62-44fc-abad-7d90b0637de6.gif" width=128>
 
