@@ -1,4 +1,10 @@
-# iNeRF
+# Fast iNeRF
+
+## TODO
+- [ ] Reconstruction loss: only do loss on key points (eg. only on object, coarsen by area)
+- [ ] Mask R-CNN / PoseCNN to segment, then only do loss on the segmented part 
+- [ ] Use PoseCNN to estimate initial guess of camera pose 
+
 
 ### [Project Page](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI&feature=emb_logo) | [Paper](https://arxiv.org/pdf/2012.05877.pdf)
 
