@@ -21,12 +21,15 @@ This preliminary codebase currently only shows how to apply iNeRF with pixelNeRF
 
 To start, install `pytorch` and `torchvision` according to your own GPU version, and then create the environment using conda:
 - Yulun: tested with `pytorch==1.11` and `torchvision==0.12`
+- If you see `ParseException: Expected '}', found '=' (at char 759), (line:34, col:18)` error, check [here](https://github.com/sxyu/pixel-nerf/issues/61)
 ```sh
 conda env create -f environment.yml
 conda activate pixelnerf
 pip install mediapy
 pip install jupyter
 ```
+
+
 
 Please make sure you have up-to-date NVIDIA drivers supporting CUDA 10.2 at least.
 
