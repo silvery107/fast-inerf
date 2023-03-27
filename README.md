@@ -1,9 +1,10 @@
 # Fast iNeRF
 
 ## TODO
-- [ ] Reconstruction loss: only do loss on key points (eg. only on object, coarsen by area)
-- [ ] Mask R-CNN / PoseCNN to segment, then only do loss on the segmented part 
-- [ ] Use PoseCNN to estimate initial guess of camera pose 
+
+- [ ] Use PoseCNN to segment, then only do loss on the segmented part 
+- [ ] Use PoseCNN to estimate initial guess of camera pose
+- [ ] Train a NeRF model on PROPS Datatset using [this script](https://github.com/NVlabs/instant-ngp/blob/master/scripts/colmap2nerf.py) to transfer image sequences to a NeRF datatset.
 
 
 ### [Project Page](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI&feature=emb_logo) | [Paper](https://arxiv.org/pdf/2012.05877.pdf)
@@ -25,8 +26,9 @@ cd fast-iNeRF
 conda env create -f environment.yml
 conda activate inerf
 ```
+Download pretrained NeRF models [here](https://drive.google.com/drive/folders/1WdyWak9-75OHoA7rJ2Frxghq6LSe3q71?usp=share_link) and place them in `<fast-iNeRF/checkpoint>` folder.
 
-## How to use
+## Quick Start
 To run the algorithm on _Lego_ object
 ```
 python run.py --config configs/lego.txt
@@ -44,7 +46,7 @@ All NeRF models were trained using this code [https://github.com/yenchenlin/nerf
 │   ├── nerf_synthetic  
 ```
 
-## Different sampling strategies 
+## Different Sampling Strategies 
 
 ![](https://user-images.githubusercontent.com/63703454/122686222-51e1e300-d210-11eb-8f4c-be25f078ffa9.gif)
 ![](https://user-images.githubusercontent.com/63703454/122686229-58705a80-d210-11eb-9c0f-d6c2208b5457.gif)
@@ -53,7 +55,7 @@ All NeRF models were trained using this code [https://github.com/yenchenlin/nerf
 Left - **random**, in the middle - **interest points**, right - **interest regions**. 
 Interest regions sampling strategy provides faster convergence and doesnt stick in a local minimum like interest points. 
 
-## Citation
+<!-- ## Citation
 
 ```
 @inproceedings{yen2020inerf,
@@ -62,4 +64,4 @@ Interest regions sampling strategy provides faster convergence and doesnt stick 
   booktitle={IEEE/RSJ International Conference on Intelligent Robots and Systems ({IROS})},
   year={2021}
 }
-```
+``` -->
