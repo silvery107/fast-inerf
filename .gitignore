@@ -137,3 +137,4 @@ tiny_nerf_data.npz
 
 # Custom
 checkpoints/
+data/
