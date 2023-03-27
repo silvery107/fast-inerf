@@ -5,7 +5,6 @@
 - [ ] Mask R-CNN / PoseCNN to segment, then only do loss on the segmented part 
 - [ ] Use PoseCNN to estimate initial guess of camera pose 
 
-- [x] Main file [pose_estimation.ipynb](pose_estimation.ipynb)
 
 ### [Project Page](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI&feature=emb_logo) | [Paper](https://arxiv.org/pdf/2012.05877.pdf)
 
@@ -13,38 +12,48 @@
 
 PyTorch implementation of iNeRF, an RGB-only method that inverts neural radiance fields (NeRFs) for 6DoF pose estimation.
 
-## Overview
 
-This preliminary codebase currently only shows how to apply iNeRF with pixelNeRF. However, iNeRF can work with the original NeRF as well.
-
-## Environment setup
+## Installation
 
 To start, install `pytorch` and `torchvision` according to your own GPU version, and then create the environment using conda:
 - Yulun: tested with `pytorch==1.11` and `torchvision==0.12`
 - Sibo: tested with `pytorch==1.13` and `torchvision==0.14`
 - If you see `ParseException: Expected '}', found '=' (at char 759), (line:34, col:18)` error, check [here](https://github.com/sxyu/pixel-nerf/issues/61)
 ```sh
+git clone git@github.com:silvery107/fast-iNeRF.git
+cd fast-iNeRF
 conda env create -f environment.yml
-conda activate pixelnerf
-pip install mediapy
-pip install jupyter
+conda activate inerf
 ```
 
+## How to use
+To run the algorithm on _Lego_ object
+```
+python run.py --config configs/lego.txt
+```
+If you want to store gif video of optimization process, set ```OVERLAY = True``` [here](https://github.com/salykovaa/inerf/blob/a8c996958789168b93e73ed8aee8d6f76ceb0fbc/run.py#L217)
 
+All other parameters such as _batch size_, _sampling strategy_, _initial camera error_ you can adjust in corresponding config [files](https://github.com/salykovaa/inerf/tree/main/configs).
 
-Please make sure you have up-to-date NVIDIA drivers supporting CUDA 10.2 at least.
+To run the algorithm on the llff dataset, just download the "nerf_llff_data" folder from [here](https://drive.google.com/drive/folders/128yBriW1IG_3NJ5Rp7APSTZsJqdJdfc1) and put the downloaded folder in the "data" folder.
 
-## Quick start
+All NeRF models were trained using this code [https://github.com/yenchenlin/nerf-pytorch/](https://github.com/yenchenlin/nerf-pytorch/)
+```
+├── data 
+│   ├── nerf_llff_data   
+│   ├── nerf_synthetic  
+```
 
-1. Download all pixelNeRF's pretrained weight files from [here](https://drive.google.com/file/d/1UO_rL201guN6euoWkCOn-XpqR2e8o6ju/view?usp=sharing).
-Create and extract it to `./checkpoints/` folder, so that `./checkpoints/srn_car/pixel_nerf_latest` exists.
+## Different sampling strategies 
 
-1. Open `pose_estimation.ipynb` and run through it. You can preview the results [here](https://github.com/yenchenlin/iNeRF-public/blob/master/pixel-nerf/pose_estimation.ipynb). In the following, we show the overlay of images rendered with our predicted poses and the target image.
+![](https://user-images.githubusercontent.com/63703454/122686222-51e1e300-d210-11eb-8f4c-be25f078ffa9.gif)
+![](https://user-images.githubusercontent.com/63703454/122686229-58705a80-d210-11eb-9c0f-d6c2208b5457.gif)
+![](https://user-images.githubusercontent.com/63703454/122686235-5ad2b480-d210-11eb-87ec-d645ae07b8d7.gif)
 
-<img src="https://user-images.githubusercontent.com/7057863/161636178-c4f36310-eb62-44fc-abad-7d90b0637de6.gif" width=128>
+Left - **random**, in the middle - **interest points**, right - **interest regions**. 
+Interest regions sampling strategy provides faster convergence and doesnt stick in a local minimum like interest points. 
 
-
-# BibTeX
+## Citation
 
 ```
 @inproceedings{yen2020inerf,
@@ -54,7 +63,3 @@ Create and extract it to `./checkpoints/` folder, so that `./checkpoints/srn_car
   year={2021}
 }
 ```
-
-# Acknowledgements
-
-This implementation is based on Alex Yu's [pixel-nerf](https://github.com/sxyu/pixel-nerf).
