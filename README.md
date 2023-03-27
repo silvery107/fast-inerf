@@ -6,6 +6,7 @@
 - [ ] Use PoseCNN to estimate initial guess of camera pose 
 
 - [x] Main file [pose_estimation.ipynb](pose_estimation.ipynb)
+- The pose optimization method (interest region sampling) is released [here](https://github.com/google-research/google-research/tree/master/inerf). [LieTorch](https://github.com/princeton-vl/lietorch) could be a good lib to port it back.
 
 ### [Project Page](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI&feature=emb_logo) | [Paper](https://arxiv.org/pdf/2012.05877.pdf)
 
