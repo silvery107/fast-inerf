@@ -248,10 +248,7 @@ class RotationBranch(nn.Module):
         rois = self.roi_pool_f1(feature1, bbx) + self.roi_pool_f2(feature2, bbx)
         N = bbx.shape[0]
         # print(rois.shape)
-        quaternion = torch.zeros((N, 4*self.num_classes), dtype=feature1.dtype, device=feature1.device)
-        for idx, roi in enumerate(rois):
-            # print(roi.shape)
-            quaternion[idx] = self.roi_fc(roi.flatten())
+        quaternion = self.roi_fc(rois.flatten(start_dim=1))
         ######################################################################
         #                            END OF YOUR CODE                        #
         ######################################################################
@@ -367,7 +364,7 @@ class PoseCNN(nn.Module):
                 quaternion = self.rot_branch(feature1, feature2, bbx[:, :5].float())
                 pred_Rs, label = self.estimateRotation(quaternion, bbx)
                 
-                pred_centers, pred_depths = HoughVoting(segmentation, centermaps)
+                pred_centers, pred_depths = self.HoughVoting(segmentation, centermaps)
 
                 output_dict = self.generate_pose(pred_Rs, pred_centers, pred_depths, bbx.to(pred_Rs.device))
                 ######################################################################
@@ -400,7 +397,7 @@ class PoseCNN(nn.Module):
         filter_bbx: N_filter_bbx * 6 (batch_ids, x1, y1, x2, y2, cls)
         """
         N_filter_bbx = filter_bbx.shape[0]
-        pred_Rs = torch.zeros(N_filter_bbx, 3, 3)
+        pred_Rs = torch.zeros(N_filter_bbx, 3, 3, device=quaternion_map.device)
         label = []
         for idx, bbx in enumerate(filter_bbx):
             batch_id = int(bbx[0].item())
@@ -414,7 +411,7 @@ class PoseCNN(nn.Module):
 
     def gtRotation(self, filter_bbx, input_dict):
         N_filter_bbx = filter_bbx.shape[0]
-        gt_Rs = torch.zeros(N_filter_bbx, 3, 3)
+        gt_Rs = torch.zeros(N_filter_bbx, 3, 3, device=filter_bbx.device)
         for idx, bbx in enumerate(filter_bbx):
             batch_id = int(bbx[0].item())
             cls = int(bbx[5].item())
@@ -442,6 +439,38 @@ class PoseCNN(nn.Module):
                 output_dict[bs.item()][obj_id.item()] = np.vstack((np.hstack((R, T)), np.array([[0, 0, 0, 1]])))
         return output_dict
 
+    def HoughVoting(self, label, centermap, num_classes=10):
+        """
+        label [bs, 3, H, W]
+        centermap [bs, 3*maxinstance, H, W]
+        """
+        batches, H, W = label.shape
+        x = np.linspace(0, W - 1, W)
+        y = np.linspace(0, H - 1, H)
+        xv, yv = np.meshgrid(x, y)
+        xy = torch.from_numpy(np.array((xv, yv))).to(device=label.device, dtype=torch.float32)
+        x_index = torch.from_numpy(x).to(device=label.device, dtype=torch.int32)
+        centers = torch.zeros(batches, num_classes, 2, dtype=centermap.dtype, device=label.device)
+        depths = torch.zeros(batches, num_classes, dtype=centermap.dtype, device=label.device)
+        for bs in range(batches):
+            for cls in range(1, num_classes + 1):
+                if (label[bs] == cls).sum() >= _LABEL2MASK_THRESHOL:
+                    pixel_location = xy[:2, label[bs] == cls]
+                    pixel_direction = centermap[bs, (cls-1)*3:cls*3][:2, label[bs] == cls]
+                    y_index = x_index.unsqueeze(dim=0) - pixel_location[0].unsqueeze(dim=1)
+                    y_index = torch.round(pixel_location[1].unsqueeze(dim=1) + (pixel_direction[1]/pixel_direction[0]).unsqueeze(dim=1) * y_index).to(torch.int32)
+                    mask = (y_index >= 0) * (y_index < H)
+                    count = y_index * W + x_index.unsqueeze(dim=0)
+                    center, inlier_num = torch.bincount(count[mask]).argmax(), torch.bincount(count[mask]).max()
+                    center_x, center_y = center % W, torch.div(center, W, rounding_mode='trunc')
+                    if inlier_num > _HOUGHVOTING_NUM_INLIER:
+                        centers[bs, cls - 1, 0], centers[bs, cls - 1, 1] = center_x, center_y
+                        xyplane_dis = xy - torch.tensor([center_x, center_y])[:, None, None].to(device = label.device)
+                        xyplane_direction = xyplane_dis/(xyplane_dis**2).sum(dim=0).sqrt()[None, :, :]
+                        predict_direction = centermap[bs, (cls-1)*3:cls*3][:2]
+                        inlier_mask = ((xyplane_direction * predict_direction).sum(dim=0).abs() >= _HOUGHVOTING_DIRECTION_INLIER) * label[bs] == cls
+                        depths[bs, cls - 1] = centermap[bs, (cls-1)*3:cls*3][2, inlier_mask].mean()
+        return centers, depths
 
 def eval(model, dataloader, device, alpha = 0.35):
     import cv2
@@ -503,40 +532,6 @@ def IOUselection(pred_bbxes, gt_bbxes, threshold):
     return output_bbxes
 
 
-def HoughVoting(label, centermap, num_classes=10):
-    """
-    label [bs, 3, H, W]
-    centermap [bs, 3*maxinstance, H, W]
-    """
-    batches, H, W = label.shape
-    x = np.linspace(0, W - 1, W)
-    y = np.linspace(0, H - 1, H)
-    xv, yv = np.meshgrid(x, y)
-    xy = torch.from_numpy(np.array((xv, yv))).to(device=label.device, dtype=torch.float32)
-    x_index = torch.from_numpy(x).to(device=label.device, dtype=torch.int32)
-    centers = torch.zeros(batches, num_classes, 2, dtype=centermap.dtype, device=label.device)
-    depths = torch.zeros(batches, num_classes, dtype=centermap.dtype, device=label.device)
-    for bs in range(batches):
-        for cls in range(1, num_classes + 1):
-            if (label[bs] == cls).sum() >= _LABEL2MASK_THRESHOL:
-                pixel_location = xy[:2, label[bs] == cls]
-                pixel_direction = centermap[bs, (cls-1)*3:cls*3][:2, label[bs] == cls]
-                y_index = x_index.unsqueeze(dim=0) - pixel_location[0].unsqueeze(dim=1)
-                y_index = torch.round(pixel_location[1].unsqueeze(dim=1) + (pixel_direction[1]/pixel_direction[0]).unsqueeze(dim=1) * y_index).to(torch.int32)
-                mask = (y_index >= 0) * (y_index < H)
-                count = y_index * W + x_index.unsqueeze(dim=0)
-                center, inlier_num = torch.bincount(count[mask]).argmax(), torch.bincount(count[mask]).max()
-                center_x, center_y = center % W, torch.div(center, W, rounding_mode='trunc')
-                if inlier_num > _HOUGHVOTING_NUM_INLIER:
-                    centers[bs, cls - 1, 0], centers[bs, cls - 1, 1] = center_x, center_y
-                    xyplane_dis = xy - torch.tensor([center_x, center_y])[:, None, None].to(device = label.device)
-                    xyplane_direction = xyplane_dis/(xyplane_dis**2).sum(dim=0).sqrt()[None, :, :]
-                    predict_direction = centermap[bs, (cls-1)*3:cls*3][:2]
-                    inlier_mask = ((xyplane_direction * predict_direction).sum(dim=0).abs() >= _HOUGHVOTING_DIRECTION_INLIER) * label[bs] == cls
-                    depths[bs, cls - 1] = centermap[bs, (cls-1)*3:cls*3][2, inlier_mask].mean()
-    return centers, depths
-
-
 def train_posecnn(data_dir, batch_size=2, num_classes=10, device="cuda"):
     # TODO set download to True if dataset doesn't exist
     train_dataset = PROPSPoseDataset(data_dir, "train", download=False) 
@@ -556,7 +551,7 @@ def train_posecnn(data_dir, batch_size=2, num_classes=10, device="cuda"):
                                 betas=(0.9, 0.999))
 
     loss_history = []
-    log_period = 5
+    log_period = 50
     _iter = 0
 
     st_time = time.time()
