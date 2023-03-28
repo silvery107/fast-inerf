@@ -4,7 +4,7 @@ import imageio
 import numpy as np
 import skimage
 import cv2
-from utils import config_parser, load_blender, show_img, find_POI, img2mse, load_llff_data
+from utils.inerf_utils import config_parser, load_blender, show_img, find_POI, img2mse, load_llff_data
 from nerf_helpers import load_nerf
 from render_helpers import render, to8b, get_rays
 from inerf_helpers import camera_transf

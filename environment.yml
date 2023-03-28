@@ -13,6 +13,9 @@ dependencies:
       - tensorboard
       - imageio
       - imageio-ffmpeg
+      - pyquaternion
+      - trimesh
+      - pyrender
       # - ipdb
       # - pretrainedmodels
       # - lpips
