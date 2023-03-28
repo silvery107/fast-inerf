@@ -2,12 +2,12 @@
 
 ## TODO
 
-- [ ] Use PoseCNN to segment, then only do loss on the segmented part 
-- [ ] Use PoseCNN to estimate initial guess of camera pose
-- [ ] Train a NeRF model on PROPS Datatset using [this script](https://github.com/NVlabs/instant-ngp/blob/master/scripts/colmap2nerf.py) to transfer image sequences to a NeRF datatset.
+- [ ] Do sampling only on pixels within an object, using masks of each object class from PoseCNN
+- [ ] Set a initial guess of camera pose, using the estimated object pose from PoseCNN
+- [ ] Train a NeRF model on PROPS Datatset, using [this script](https://github.com/NVlabs/instant-ngp/blob/master/scripts/colmap2nerf.py) to transfer image sequences to a NeRF datatset.
 
 #### Test Scripts
-- `python tests/test_posecnn.py` for training and evaluating of PoseCNN
+- `python tests/test_posecnn.py` for training and evaluating PoseCNN
 - `python tests/test_inerf.py --config configs/lego.txt` for optimizing iNeRF
 
 ### [Project Page](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI&feature=emb_logo) | [Paper](https://arxiv.org/pdf/2012.05877.pdf)
@@ -29,7 +29,8 @@ cd fast-iNeRF
 conda env create -f environment.yml
 conda activate inerf
 ```
-Download pretrained NeRF models [here](https://drive.google.com/drive/folders/1WdyWak9-75OHoA7rJ2Frxghq6LSe3q71?usp=share_link) and place them in `<checkpoints>` folder.
+Download pretrained NeRF and PoseCNN models [here](https://drive.google.com/drive/folders/1WdyWak9-75OHoA7rJ2Frxghq6LSe3q71?usp=share_link) and place them in `<checkpoints>` folder.
+
 Download `PROPS-Pose-Dataset` [here](https://drive.google.com/file/d/15rhwXhzHGKtBcxJAYMWJG7gN7BLLhyAq/view) and extract it to `<data>` folder.
 
 ## Quick Start
