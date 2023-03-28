@@ -29,7 +29,8 @@ cd fast-iNeRF
 conda env create -f environment.yml
 conda activate inerf
 ```
-Download pretrained NeRF models [here](https://drive.google.com/drive/folders/1WdyWak9-75OHoA7rJ2Frxghq6LSe3q71?usp=share_link) and place them in `<fast-iNeRF/checkpoint>` folder.
+Download pretrained NeRF models [here](https://drive.google.com/drive/folders/1WdyWak9-75OHoA7rJ2Frxghq6LSe3q71?usp=share_link) and place them in `<checkpoints>` folder.
+Download `PROPS-Pose-Dataset` [here](https://drive.google.com/file/d/15rhwXhzHGKtBcxJAYMWJG7gN7BLLhyAq/view) and extract it to `<data>` folder.
 
 ## Quick Start
 To run the algorithm on _Lego_ object
