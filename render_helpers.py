@@ -6,7 +6,7 @@ import imageio
 import numpy as np
 import torch.nn.functional as F
 #from torchsearchsorted import searchsorted
-from utils import to8b
+from utils.inerf_utils import to8b
 DEBUG = False
 
 

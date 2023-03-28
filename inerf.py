@@ -4,16 +4,14 @@ import imageio
 import numpy as np
 import skimage
 import cv2
-from utils.inerf_utils import config_parser, load_blender, show_img, find_POI, img2mse, load_llff_data
+from utils.inerf_utils import config_parser, load_blender, show_img, find_POI, img2mse, load_llff_data, camera_transf
 from nerf_helpers import load_nerf
 from render_helpers import render, to8b, get_rays
-from inerf_helpers import camera_transf
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
 
-def run():
-
+def run_inerf(_overlay=False, _debug=False):
     # Parameters
     parser = config_parser()
     args = parser.parse_args()
@@ -80,11 +78,11 @@ def run():
         obs_img_noised = obs_img
 
     obs_img_noised = (np.array(obs_img_noised) * 255).astype(np.uint8)
-    if DEBUG:
+    if _debug:
         show_img("Observed image", obs_img_noised)
 
     # find points of interest of the observed image
-    POI = find_POI(obs_img_noised, DEBUG)  # xy pixel coordinates of points of interest (N x 2)
+    POI = find_POI(obs_img_noised, _debug)  # xy pixel coordinates of points of interest (N x 2)
     obs_img_noised = (np.array(obs_img_noised) / 255.).astype(np.float32)
 
     # create meshgrid from the observed image
@@ -128,7 +126,7 @@ def run():
     os.makedirs(testsavedir, exist_ok=True)
 
     # imgs - array with images are used to create a video of optimization process
-    if OVERLAY is True:
+    if _overlay is True:
         imgs = []
 
     for k in range(300):
@@ -199,7 +197,7 @@ def run():
                 print('Translation error: ', translation_error)
                 print('-----------------------------------')
 
-            if OVERLAY is True:
+            if _overlay is True:
                 with torch.no_grad():
                     rgb, disp, acc, _ = render(H, W, focal, chunk=args.chunk, c2w=pose[:3, :4], **render_kwargs)
                     rgb = rgb.cpu().detach().numpy()
@@ -210,12 +208,5 @@ def run():
                     imageio.imwrite(filename, dst)
                     imgs.append(dst)
 
-    if OVERLAY is True:
-        imageio.mimwrite(os.path.join(testsavedir, 'video.gif'), imgs, fps=8) #quality = 8 for mp4 format
-
-DEBUG = False
-OVERLAY = False
-
-if __name__=='__main__':
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    run()
+    # if _overlay is True:
+    #     imageio.mimwrite(os.path.join(testsavedir, 'video.gif'), imgs, fps=8) #quality = 8 for mp4 format
