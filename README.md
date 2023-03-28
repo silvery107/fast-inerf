@@ -6,6 +6,9 @@
 - [ ] Use PoseCNN to estimate initial guess of camera pose
 - [ ] Train a NeRF model on PROPS Datatset using [this script](https://github.com/NVlabs/instant-ngp/blob/master/scripts/colmap2nerf.py) to transfer image sequences to a NeRF datatset.
 
+#### Test Scripts
+- `python tests/test_posecnn.py` for training and evaluating of PoseCNN
+- `python tests/test_inerf.py --config configs/lego.txt` for optimizing iNeRF
 
 ### [Project Page](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI&feature=emb_logo) | [Paper](https://arxiv.org/pdf/2012.05877.pdf)
 
@@ -31,11 +34,11 @@ Download pretrained NeRF models [here](https://drive.google.com/drive/folders/1W
 ## Quick Start
 To run the algorithm on _Lego_ object
 ```
-python run.py --config configs/lego.txt
+python tests/test_inerf.py --config configs/lego.txt
 ```
-If you want to store gif video of optimization process, set ```OVERLAY = True``` [here](https://github.com/salykovaa/inerf/blob/a8c996958789168b93e73ed8aee8d6f76ceb0fbc/run.py#L217)
+If you want to store gif video of optimization process, set ```overlay = True```
 
-All other parameters such as _batch size_, _sampling strategy_, _initial camera error_ you can adjust in corresponding config [files](https://github.com/salykovaa/inerf/tree/main/configs).
+All other parameters such as _batch size_, _sampling strategy_, _initial camera error_ you can adjust in corresponding config [files](https://github.com/silvery107/fast-iNeRF/tree/main/configs).
 
 To run the algorithm on the llff dataset, just download the "nerf_llff_data" folder from [here](https://drive.google.com/drive/folders/128yBriW1IG_3NJ5Rp7APSTZsJqdJdfc1) and put the downloaded folder in the "data" folder.
 
