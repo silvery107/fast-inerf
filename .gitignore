@@ -139,3 +139,4 @@ tiny_nerf_data.npz
 checkpoints/
 data/
 output/
+*.ipynb
