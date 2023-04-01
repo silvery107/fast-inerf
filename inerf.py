@@ -7,6 +7,7 @@ import cv2
 from utils.inerf_utils import config_parser, load_blender, show_img, find_POI, img2mse, load_llff_data, camera_transf
 from nerf_helpers import load_nerf
 from render_helpers import render, to8b, get_rays
+from utils.faster_inerf_utils import load_init_pose
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
@@ -24,7 +25,9 @@ def run_inerf(_overlay=False, _debug=False):
     lrate = args.lrate
     dataset_type = args.dataset_type
     sampling_strategy = args.sampling_strategy
-    delta_phi, delta_theta, delta_psi, delta_t = args.delta_phi, args.delta_theta, args.delta_psi, args.delta_t
+    # delta_phi, delta_theta, delta_psi, delta_t = args.delta_phi, args.delta_theta, args.delta_psi, args.delta_t
+    obj_pose = None
+    delta_phi, delta_theta, delta_psi, delta_t = load_init_pose(obj_pose)
     noise, sigma, amount = args.noise, args.sigma, args.amount
     delta_brightness = args.delta_brightness
 
