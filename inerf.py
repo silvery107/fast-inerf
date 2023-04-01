@@ -28,6 +28,7 @@ def run_inerf(_overlay=False, _debug=False):
     delta_phi, delta_theta, delta_psi, delta_t = args.delta_phi, args.delta_theta, args.delta_psi, args.delta_t
     noise, sigma, amount = args.noise, args.sigma, args.amount
     delta_brightness = args.delta_brightness
+    posecnn_dir = args.posecnn_dir
     posecnn_init_pose = args.posecnn_init_pose
 
     # Load and pre-process an observed image
@@ -48,11 +49,36 @@ def run_inerf(_overlay=False, _debug=False):
         else:
             near = 0.
             far = 1.
+
+    obs_img = (np.array(obs_img) / 255.).astype(np.float32)
     
     if posecnn_init_pose:
-        start_pose = load_init_pose(obs_img_pose)
+        import torchvision.models as models
+        from pose_cnn import PoseCNN
 
-    # obs_img = (np.array(obs_img) / 255.).astype(np.float32)
+        vgg16 = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1)
+        # PROPS Pose dataset intrinsic
+        cam_intrinsic = np.array([
+                            [902.19, 0.0, 342.35],
+                            [0.0, 902.39, 252.23],
+                            [0.0, 0.0, 1.0]])
+        
+        posecnn_model = PoseCNN(pretrained_backbone = vgg16, 
+                        models_pcd = None,
+                        cam_intrinsic = cam_intrinsic).to(device)
+        posecnn_model.load_state_dict(torch.load(os.path.join(posecnn_dir, "posecnn_model.pth")))
+        posecnn_model.eval()
+
+        pose_cnn_rgb = torch.tensor(obs_img.transpose((2,0,1))[None, :]).to(device)
+        inputdict = {'rgb': pose_cnn_rgb}
+        pose_dict, label = posecnn_model(inputdict)
+        
+        # TODO: how to use pose_dict
+        for k, v in pose_dict[0].items():
+            print(k, ":\t")
+            print(v, "\n")
+
+        # start_pose = load_init_pose(obs_img_pose)
 
     # # change brightness of the observed image (to test robustness of inerf)
     # if delta_brightness != 0:

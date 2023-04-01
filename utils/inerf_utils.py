@@ -139,6 +139,8 @@ def config_parser():
     parser.add_argument("--delta_brightness", type=float, default=0.0,
                         help='reduce/increase brightness of the observed image, value is in [-1...1]')
 
+    parser.add_argument("--posecnn_dir", type=str, default='./checkpoints/checkpoints/',
+                        help='directory of posecnn model')
     parser.add_argument("--posecnn_init_pose", type=bool, default=False,
                         help='utlize posecnn to get initial pose')
     return parser
