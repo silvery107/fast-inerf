@@ -5,11 +5,12 @@
 - [ ] Do sampling only on pixels within an object, using masks of each object class from PoseCNN
 - [ ] Set a initial guess of camera pose, using the estimated object pose from PoseCNN
 - [x] Generate PROPS-NeRF dataset, using [this script](https://github.com/NVlabs/instant-ngp/blob/master/scripts/colmap2nerf.py) to transfer image sequences to a NeRF datatset. Dataset can be downloaded on drive under `data` folder.
-- [ ] Train a NeRF model on PROPS Datatset, using `nerf-pytorch` repo
+- [x] Train a NeRF model on PROPS Datatset, using `nerf-pytorch` repo
 
 #### Test Scripts
 - `python tests/test_posecnn.py` for training and evaluating PoseCNN
-- `python tests/test_inerf.py --config configs/lego.txt` for optimizing iNeRF
+- `python tests/test_inerf.py --config configs/inerf/PROPS.txt` for optimizing iNeRF
+- `python tests/test_nerf.py --config configs/nerf/PROPS.txt` for training NeRF
 
 ### [Project Page](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI&feature=emb_logo) | [Paper](https://arxiv.org/pdf/2012.05877.pdf)
 
@@ -34,10 +35,10 @@ Download pretrained NeRF and PoseCNN models [here](https://drive.google.com/driv
 
 Download `PROPS-Pose-Dataset` [here](https://drive.google.com/file/d/15rhwXhzHGKtBcxJAYMWJG7gN7BLLhyAq/view) and extract it to `<data>` folder.
 
-## Quick Start
+## Quick Start for iNeRF
 To run the algorithm on _Lego_ object
 ```
-python tests/test_inerf.py --config configs/lego.txt
+python tests/test_inerf.py --config configs/inerf/lego.txt
 ```
 If you want to store gif video of optimization process, set ```overlay = True```
 
@@ -52,6 +53,36 @@ All NeRF models were trained using this code [https://github.com/yenchenlin/nerf
 │   ├── nerf_synthetic  
 ```
 
+
+## Quick Start for NeRF
+
+
+To train a low-res `lego` NeRF:
+```
+python tests/test_nerf.py --config configs/nerf/lego.txt
+```
+After training for 100k iterations (~4 hours on a single 2080 Ti), you can find the following video at `logs/lego_test/lego_test_spiral_100000_rgb.mp4`.
+
+![](https://user-images.githubusercontent.com/7057863/78473103-9353b300-7770-11ea-98ed-6ba2d877b62c.gif)
+
+
+To test NeRF trained on different datasets: 
+
+```
+python tests/test_nerf.py --config configs/lego.txt --render_only
+```
+
+**Pre-trained Models**
+
+You can download the pre-trained models [here](https://drive.google.com/drive/folders/1jIr8dkvefrQmv737fFm2isiT6tqpbTbv). Place the downloaded directory in `./logs` in order to test it later. See the following directory structure for an example:
+
+```
+├── logs 
+│   ├── fern_test
+│   ├── flower_test  # downloaded logs
+│   ├── trex_test    # downloaded logs
+```
+
 ## Different Sampling Strategies 
 
 ![](https://user-images.githubusercontent.com/63703454/122686222-51e1e300-d210-11eb-8f4c-be25f078ffa9.gif)
@@ -61,7 +92,7 @@ All NeRF models were trained using this code [https://github.com/yenchenlin/nerf
 Left - **random**, in the middle - **interest points**, right - **interest regions**. 
 Interest regions sampling strategy provides faster convergence and doesnt stick in a local minimum like interest points. 
 
-<!-- ## Citation
+## Citation
 
 ```
 @inproceedings{yen2020inerf,
@@ -70,4 +101,15 @@ Interest regions sampling strategy provides faster convergence and doesnt stick 
   booktitle={IEEE/RSJ International Conference on Intelligent Robots and Systems ({IROS})},
   year={2021}
 }
-``` -->
+```
+
+```
+@misc{mildenhall2020nerf,
+    title={NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis},
+    author={Ben Mildenhall and Pratul P. Srinivasan and Matthew Tancik and Jonathan T. Barron and Ravi Ramamoorthi and Ren Ng},
+    year={2020},
+    eprint={2003.08934},
+    archivePrefix={arXiv},
+    primaryClass={cs.CV}
+}
+```
