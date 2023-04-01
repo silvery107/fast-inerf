@@ -132,12 +132,7 @@ def run_inerf(_overlay=False, _debug=False):
         inputdict = {'rgb': pose_cnn_rgb}
         pose_dict, label = posecnn_model(inputdict)
         
-        # TODO: how to use pose_dict
-        for k, v in pose_dict[0].items():
-            print(k, ":\t")
-            print(v, "\n")
-
-        # start_pose = load_init_pose(obs_img_pose)
+        # start_pose = load_init_pose(pose_dict[0])
 
     # change brightness of the observed image (to test robustness of inerf)
     if delta_brightness != 0:

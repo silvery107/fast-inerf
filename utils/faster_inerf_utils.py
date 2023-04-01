@@ -1,10 +1,14 @@
 import numpy as np 
 
-def load_init_pose(obj_pose):
+def load_init_pose(pose_dict):
+    # pose_dict: {class_label : 4x4 np matrix, ...}
 
     # From poseCNN
     # TODO: get the R and t of the center object in the scene
-    R_cam_obj, t_cam_obj = obj_pose     # rotation matrix and translation vector from camera to object
+    for cl, obj_pose in pose_dict:
+        # rotation matrix and translation vector from camera to object
+        R_cam_obj = obj_pose[0:3, 0:3]
+        t_cam_obj = obj_pose[0:3, -1]
 
     R_obj_cam = R_cam_obj.T                                     # rotation matrix from object to camera
     P_obj_cam = R_obj_cam @ (np.array([0, 0, 0]) - t_cam_obj)   # position of camera in object coordinate
