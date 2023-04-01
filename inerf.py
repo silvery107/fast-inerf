@@ -4,12 +4,71 @@ import imageio
 import numpy as np
 import skimage
 import cv2
-from utils.inerf_utils import config_parser, load_blender, show_img, find_POI, img2mse, load_llff_data, camera_transf
-from nerf_helpers import load_nerf
-from render_helpers import render, to8b, get_rays
+from nerf import NeRF, get_embedder, run_network
+from utils.inerf_utils import config_parser, load_blender, show_img, find_POI, load_llff_data, camera_transf
+from utils.render_utils import render, get_rays, to8b, img2mse
+torch.autograd.set_detect_anomaly(True)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
+
+def load_nerf(args, device):
+    """Instantiate NeRF's MLP model.
+    """
+    embed_fn, input_ch = get_embedder(args.multires, args.i_embed)
+    embeddirs_fn, input_ch_views = get_embedder(args.multires_views, args.i_embed)
+    output_ch = 4
+    skips = [4]
+    model = NeRF(D=args.netdepth, W=args.netwidth,
+                 input_ch=input_ch, output_ch=output_ch, skips=skips,
+                 input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)
+
+    model_fine = NeRF(D=args.netdepth_fine, W=args.netwidth_fine,
+                      input_ch=input_ch, output_ch=output_ch, skips=skips,
+                      input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)
+
+    network_query_fn = lambda inputs, viewdirs, network_fn: run_network(inputs, viewdirs, network_fn,
+                                                                        embed_fn=embed_fn,
+                                                                        embeddirs_fn=embeddirs_fn,
+                                                                        netchunk=args.netchunk)
+    # Load checkpoint
+    ckpt_dir = args.ckpt_dir
+    ckpt_name = args.model_name
+    ckpt_path = os.path.join(ckpt_dir, ckpt_name+'.tar')
+    print('Found checkpoints', ckpt_path)
+    print('Reloading from', ckpt_path)
+    ckpt = torch.load(ckpt_path)
+
+    # Load model
+    model.load_state_dict(ckpt['network_fn_state_dict'])
+    model_fine.load_state_dict(ckpt['network_fine_state_dict'])
+
+    render_kwargs = {
+        'network_query_fn': network_query_fn,
+        'perturb': args.perturb,
+        'N_importance': args.N_importance,
+        'network_fine': model_fine,
+        'N_samples': args.N_samples,
+        'network_fn': model,
+        'use_viewdirs': args.use_viewdirs,
+        'white_bkgd': args.white_bkgd,
+        'raw_noise_std': args.raw_noise_std
+    }
+
+    # NDC only good for LLFF-style forward facing data
+    if args.dataset_type != 'llff' or args.no_ndc:
+        print('Not ndc!')
+        render_kwargs['ndc'] = False
+        render_kwargs['lindisp'] = args.lindisp
+
+    # Disable updating of the weights
+    for param in model.parameters():
+        param.requires_grad = False
+    for param in model_fine.parameters():
+        param.requires_grad = False
+
+    return render_kwargs
+
 
 def run_inerf(_overlay=False, _debug=False):
     # Parameters
@@ -208,5 +267,6 @@ def run_inerf(_overlay=False, _debug=False):
                     imageio.imwrite(filename, dst)
                     imgs.append(dst)
 
+    # TODO save imgs to a valid gif or mp4 format
     # if _overlay is True:
     #     imageio.mimwrite(os.path.join(testsavedir, 'video.gif'), imgs, fps=8) #quality = 8 for mp4 format

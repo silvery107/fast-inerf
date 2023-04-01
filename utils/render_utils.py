@@ -6,9 +6,13 @@ import imageio
 import numpy as np
 import torch.nn.functional as F
 #from torchsearchsorted import searchsorted
-from utils.inerf_utils import to8b
+
 DEBUG = False
 
+# Misc
+img2mse = lambda x, y : torch.mean((x - y) ** 2)
+mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]))
+to8b = lambda x : (255*np.clip(x,0,1)).astype(np.uint8)
 
 # Ray helpers
 def get_rays(H, W, focal, c2w):
