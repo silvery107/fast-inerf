@@ -139,6 +139,8 @@ def config_parser():
     parser.add_argument("--delta_brightness", type=float, default=0.0,
                         help='reduce/increase brightness of the observed image, value is in [-1...1]')
 
+    parser.add_argument("--posecnn_init_pose", type=bool, default=False,
+                        help='utlize posecnn to get initial pose')
     return parser
 
 rot_psi = lambda phi: np.array([
@@ -192,6 +194,14 @@ def load_blender(data_dir, model_name, obs_img_num, half_res, white_bkgd, *kwarg
     obs_img_pose = np.array(frames[obs_img_num]['transform_matrix']).astype(np.float32)
     phi, theta, psi, t = kwargs
     start_pose =  trans_t(t) @ rot_phi(phi/180.*np.pi) @ rot_theta(theta/180.*np.pi) @ rot_psi(psi/180.*np.pi)  @ obs_img_pose
+
+    # print("poses: ", poses.shape)
+    print("obs_img_num: ", obs_img_num)
+    # print("obs_img: ", obs_img.shape)
+    # print("obs_img_pose: ", poses[obs_img_num])
+    print("obs_img_pose: ", obs_img_pose)
+    print("start_pose: ", start_pose)
+
     return img_rgb, [H, W, focal], start_pose, obs_img_pose # image of type uint8
 
 
@@ -459,4 +469,11 @@ def load_llff_data(data_dir, model_name, obs_img_num, *kwargs, factor=8, recente
     obs_img_pose = np.concatenate((poses[obs_img_num], np.array([[0,0,0,1.]])), axis=0)
     phi, theta, psi, t = kwargs
     start_pose = rot_phi(phi/180.*np.pi) @ rot_theta(theta/180.*np.pi) @ rot_psi(psi/180.*np.pi) @ trans_t(t) @ obs_img_pose
+
+    print("poses: ", poses.shape)
+    print("obs_img_num: ", obs_img_num)
+    print("obs_img: ", obs_img.shape)
+    print("obs_img_pose: ", poses[obs_img_num])
+    print("obs_img_pose: ", obs_img_pose)
+    print("start_pose: ", start_pose)
     return obs_img, hwf, start_pose, obs_img_pose, bds
