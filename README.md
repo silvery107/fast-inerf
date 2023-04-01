@@ -5,7 +5,7 @@
 - [ ] Do sampling only on pixels within an object, using masks of each object class from PoseCNN
 - [ ] Set a initial guess of camera pose, using the estimated object pose from PoseCNN
 - [x] Generate PROPS-NeRF dataset, using [this script](https://github.com/NVlabs/instant-ngp/blob/master/scripts/colmap2nerf.py) to transfer image sequences to a NeRF datatset. Dataset can be downloaded on drive under `data` folder.
-- [ ] Train a NeRF model on PROPS Datatset, using `nerf-pytorch` repo
+- [x] Train a NeRF model on PROPS Datatset, using `nerf-pytorch` repo
 
 #### Test Scripts
 - `python tests/test_posecnn.py` for training and evaluating PoseCNN
