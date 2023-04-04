@@ -531,6 +531,24 @@ def IOUselection(pred_bbxes, gt_bbxes, threshold):
                     output_bbxes = torch.cat((output_bbxes, pred_bbx.unsqueeze(dim=0)), dim=0)
     return output_bbxes
 
+def getBbx(label, num_classes=10):
+        bbx = []
+        bs, H, W = label.shape
+        device = label.device
+        label_repeat = label.view(bs, 1, H, W).repeat(1, num_classes, 1, 1).to(device)
+        label_target = torch.linspace(0, num_classes - 1, steps = num_classes).view(1, -1, 1, 1).repeat(bs, 1, H, W).to(device)
+        mask = (label_repeat == label_target)
+        for batch_id in range(mask.shape[0]):
+            for cls_id in range(mask.shape[1]):
+                if cls_id != 0: 
+                    # cls_id == 0 is the background
+                    y, x = torch.where(mask[batch_id, cls_id] != 0)
+                    if y.numel() >= _LABEL2MASK_THRESHOL:
+                        bbx.append([batch_id, torch.min(x).item(), torch.min(y).item(), 
+                                    torch.max(x).item(), torch.max(y).item(), cls_id])
+        bbx = torch.tensor(bbx).to(device)
+        return bbx
+
 
 def train_posecnn(data_dir, batch_size=2, num_classes=10, device="cuda"):
     # TODO set download to True if dataset doesn't exist

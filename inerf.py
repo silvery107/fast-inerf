@@ -145,19 +145,22 @@ def run_inerf(_overlay=False, _debug=False):
 
     ################### Start ###################
     # bbx: size: (N,4) with (x1, y1, x2, y2); (x1, y1) is the top left corner of the bounding box and (x2, y2) is the bottom right corner of the bounding box.
-    for ii in range(bbx.shape[0]):
-        x1, y1, x2, y2 = int(bbx[ii, 0]), int(bbx[ii, 1]), int(bbx[ii, 2]), int(bbx[ii, 3])
+    if posecnn_init_pose:
+        from pose_cnn import getBbx
+        bbx = getBbx(label)
+        for ii in range(bbx.shape[0]):
+            x1, y1, x2, y2 = int(bbx[ii, 0]), int(bbx[ii, 1]), int(bbx[ii, 2]), int(bbx[ii, 3])
 
-        x = np.arange(x1, x2+1, 1)
-        y = np.arange(y1, y2+1, 1)
-        xx, yy = np.meshgrid(x, y)
+            x = np.arange(x1, x2+1, 1)
+            y = np.arange(y1, y2+1, 1)
+            xx, yy = np.meshgrid(x, y)
 
-        coords = np.c_[xx.ravel(), yy.ravel()]
+            coords = np.c_[xx.ravel(), yy.ravel()]
 
-        if ii == 0: 
-            POI = coords
-        else:
-            POI = np.concatenate((POI, coords), axis=0)
+            if ii == 0: 
+                POI = coords
+            else:
+                POI = np.concatenate((POI, coords), axis=0)
     ################### End ###################
 
 
