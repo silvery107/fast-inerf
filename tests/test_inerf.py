@@ -11,4 +11,4 @@ from inerf import run_inerf
 
 if __name__=='__main__':
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    run_inerf(_overlay=False, _debug=False)
+    run_inerf(_overlay=True, _debug=False)

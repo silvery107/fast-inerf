@@ -9,6 +9,8 @@ from utils.inerf_utils import config_parser, load_blender, show_img, find_POI, l
 from utils.render_utils import render, get_rays, to8b, img2mse
 torch.autograd.set_detect_anomaly(True)
 from utils.faster_inerf_utils import load_init_pose
+import torchvision.models as models
+from pose_cnn import PoseCNN
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
@@ -112,27 +114,33 @@ def run_inerf(_overlay=False, _debug=False):
     obs_img = (np.array(obs_img) / 255.).astype(np.float32)
     
     if posecnn_init_pose:
-        import torchvision.models as models
-        from pose_cnn import PoseCNN
-
-        vgg16 = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1)
-        # PROPS Pose dataset intrinsic
+        # PROPS Pose dataset intrinsic TODO: should be parsed in
         cam_intrinsic = np.array([
                             [902.19, 0.0, 342.35],
                             [0.0, 902.39, 252.23],
                             [0.0, 0.0, 1.0]])
         
+        # Load trained posecnn model  
+        vgg16 = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1)
         posecnn_model = PoseCNN(pretrained_backbone = vgg16, 
                         models_pcd = None,
                         cam_intrinsic = cam_intrinsic).to(device)
         posecnn_model.load_state_dict(torch.load(os.path.join(posecnn_dir, "posecnn_model.pth")))
         posecnn_model.eval()
 
+        # Prepare rgb as posecnn input format
         pose_cnn_rgb = torch.tensor(obs_img.transpose((2,0,1))[None, :]).to(device)
         inputdict = {'rgb': pose_cnn_rgb}
-        pose_dict, label = posecnn_model(inputdict)
-        
-        # start_pose = load_init_pose(pose_dict[0])
+
+        # pose_dict[0]: {class_label : 4x4 pose matrix, ...}
+        # label[0]:     (H, W) pixel class label
+        pose_dict, label = posecnn_model(inputdict) 
+
+        start_pose = load_init_pose(pose_dict[0], label[0])
+        # import matplotlib.pyplot as plt
+        # plt.imshow(prediction.transpose((1,2,0)))
+        # plt.show()
+
 
     # change brightness of the observed image (to test robustness of inerf)
     if delta_brightness != 0:
@@ -209,6 +217,10 @@ def run_inerf(_overlay=False, _debug=False):
 
     testsavedir = os.path.join(output_dir, model_name)
     os.makedirs(testsavedir, exist_ok=True)
+
+    # TODO save imgs to a valid gif or mp4 format
+    if _overlay is True:
+        imgs = []
 
     for k in range(300):
 
@@ -289,9 +301,5 @@ def run_inerf(_overlay=False, _debug=False):
                     imageio.imwrite(filename, dst)
                     imgs.append(dst)
 
-    # TODO save imgs to a valid gif or mp4 format
     if _overlay is True:
-        imgs = []
-
-    # if _overlay is True:
-    #     imageio.mimwrite(os.path.join(testsavedir, 'video.gif'), imgs, fps=8) #quality = 8 for mp4 format
+        imageio.mimwrite(os.path.join(testsavedir, 'video.gif'), imgs, fps=8) #quality = 8 for mp4 format

@@ -141,7 +141,7 @@ def config_parser():
 
     parser.add_argument("--posecnn_dir", type=str, default='./checkpoints/checkpoints/',
                         help='directory of posecnn model')
-    parser.add_argument("--posecnn_init_pose", type=bool, default=False,
+    parser.add_argument("--posecnn_init_pose", type=bool, default=True,
                         help='utlize posecnn to get initial pose')
     return parser
 
