@@ -131,3 +131,7 @@ dmypy.json
 
 # Custom
 checkpoints/
+data/
+logs/
+output/
+*.ipynb
