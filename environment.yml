@@ -1,5 +1,5 @@
 # run: conda env create -f environment.yml
-name: pixelnerf
+name: inerf
 channels:
   - pytorch
   - defaults
@@ -7,19 +7,23 @@ dependencies:
   - python>=3.8
   - pip
   - pip:
-      - pyhocon
-      - opencv-python
-      - dotmap
+      - pyhocon==0.3.55
+      - opencv-contrib-python==4.5.5.64
+      # - dotmap
       - tensorboard
       - imageio
       - imageio-ffmpeg
-      - ipdb
-      - pretrainedmodels
-      - lpips
+      - pyquaternion
+      - trimesh
+      - pyrender
+      # - ipdb
+      # - pretrainedmodels
+      # - lpips
   - scipy
   - numpy
   - matplotlib
-  # - pytorch==1.6.0
-  # - torchvision==0.7.0
-  - scikit-image==0.17.2
+  - configargparse
+  # - pytorch==1.8.1
+  # - torchvision==0.9.1
+  - scikit-image
   - tqdm
