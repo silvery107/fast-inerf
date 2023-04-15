@@ -136,7 +136,7 @@ def run_inerf(_overlay=False, _debug=False):
         # label[0]:     (H, W) pixel class label
         pose_dict, label = posecnn_model(inputdict) 
 
-        start_pose = load_init_pose(pose_dict[0], label[0])
+        start_pose = load_init_pose(pose_dict[0], label[0], start_pose)
         # import matplotlib.pyplot as plt
         # plt.imshow(prediction.transpose((1,2,0)))
         # plt.show()
@@ -270,7 +270,7 @@ def run_inerf(_overlay=False, _debug=False):
 
         if (k + 1) % 20 == 0 or k == 0:
             print('Step: ', k)
-            print('Loss: ', loss)
+            print('Loss: ', loss.item())
 
             with torch.no_grad():
                 pose_dummy = pose.cpu().detach().numpy()
