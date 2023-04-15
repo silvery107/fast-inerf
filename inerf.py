@@ -175,23 +175,29 @@ def run_inerf(_overlay=False, _debug=False):
         show_img("Observed image", obs_img_noised)
 
     ################### Start ###################
-    # bbx: size: (N,4) with (x1, y1, x2, y2); (x1, y1) is the top left corner of the bounding box and (x2, y2) is the bottom right corner of the bounding box.
-    if posecnn_init_pose:
-        from pose_cnn import getBbx
-        bbx = getBbx(label)
-        for ii in range(bbx.shape[0]):
-            x1, y1, x2, y2 = int(bbx[ii, 0]), int(bbx[ii, 1]), int(bbx[ii, 2]), int(bbx[ii, 3])
+    # bbx: size: (N,4) with (x1, y1, x2, y2)
+    # (x1, y1) is the top left corner of the bounding box 
+    # (x2, y2) is the bottom right corner of the bounding box.
+    if args.mask_region:
+        from pose_cnn import getBbx, getSegMask
+        # bbx = getBbx(label)
+        # for ii in range(bbx.shape[0]):
+        #     x1, y1, x2, y2 = int(bbx[ii, 0]), int(bbx[ii, 1]), int(bbx[ii, 2]), int(bbx[ii, 3])
 
-            x = np.arange(x1, x2+1, 1)
-            y = np.arange(y1, y2+1, 1)
-            xx, yy = np.meshgrid(x, y)
+        #     x = np.arange(x1, x2+1, 1)
+        #     y = np.arange(y1, y2+1, 1)
+        #     xx, yy = np.meshgrid(x, y)
 
-            obj = np.c_[xx.ravel(), yy.ravel()]
+        #     obj = np.c_[yy.ravel(), xx.ravel()]
 
-            if ii == 0: 
-                POI = obj
-            else:
-                POI = np.concatenate((POI, obj), axis=0)
+        #     if ii == 0: 
+        #         POI = obj
+        #     else:
+        #         POI = np.concatenate((POI, obj), axis=0)
+        obj_mask = getSegMask(label).cpu().numpy() # (H, W)
+        seg_index = obj_mask.nonzero()
+        POI = np.stack([seg_index[1], seg_index[0]], axis=1)
+
     ################### End ###################
 
     else:
@@ -207,8 +213,9 @@ def run_inerf(_overlay=False, _debug=False):
     # create sampling mask for interest region sampling strategy
     interest_regions = np.zeros((H, W, ), dtype=np.uint8)
     interest_regions[POI[:,1], POI[:,0]] = 1
-    I = args.dil_iter
-    interest_regions = cv2.dilate(interest_regions, np.ones((kernel_size, kernel_size), np.uint8), iterations=I)
+    if not args.mask_region:
+        I = args.dil_iter
+        interest_regions = cv2.dilate(interest_regions, np.ones((kernel_size, kernel_size), np.uint8), iterations=I)
     interest_regions = np.array(interest_regions, dtype=bool)
     interest_regions = coords[interest_regions]
 
@@ -244,7 +251,7 @@ def run_inerf(_overlay=False, _debug=False):
     if _overlay is True:
         imgs = []
 
-    for k in range(300):
+    for k in range(600):
 
         if sampling_strategy == 'random':
             rand_inds = np.random.choice(coords.shape[0], size=batch_size, replace=False)

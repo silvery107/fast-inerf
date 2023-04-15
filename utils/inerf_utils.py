@@ -145,6 +145,7 @@ def config_parser():
     
     parser.add_argument("--posecnn_init_pose", action="store_true",
                         help='utlize posecnn to get initial pose')
+    parser.add_argument("--mask_region", action="store_true")
     return parser
 
 rot_psi = lambda phi: np.array([
@@ -203,8 +204,8 @@ def load_blender(data_dir, model_name, obs_img_num, half_res, white_bkgd, *kwarg
     print("obs_img_num: ", obs_img_num)
     # print("obs_img: ", obs_img.shape)
     # print("obs_img_pose: ", poses[obs_img_num])
-    print("obs_img_pose: ", obs_img_pose)
-    print("start_pose: ", start_pose)
+    print("obs_img_pose:\n", obs_img_pose)
+    print("start_pose:\n", start_pose)
 
     return img_rgb, [H, W, focal], start_pose, obs_img_pose # image of type uint8
 

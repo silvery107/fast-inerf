@@ -13,15 +13,15 @@ obs_img_num = 2
 dil_iter = 3
 kernel_size = 5
 batch_size = 512
-lrate = 0.01
+lrate = 0.05
 sampling_strategy = interest_regions
 
-delta_phi = 10.
+delta_phi = 0.
 delta_theta = 0.
 delta_psi = 0.
-delta_t = 0.
+delta_t = 0.0
 
 noise = None
-sigma = 0.01
-amount = 0.8
+sigma = 0.0
+amount = 0.0
 delta_brightness = 0.

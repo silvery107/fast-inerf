@@ -549,6 +549,15 @@ def getBbx(label, num_classes=10):
         bbx = torch.tensor(bbx).to(device)
         return bbx
 
+def getSegMask(label, num_classes=10):
+        bbx = []
+        bs, H, W = label.shape
+        device = label.device
+        # label_repeat = label.view(bs, 1, H, W).repeat(1, num_classes, 1, 1).to(device)
+        # label_target = torch.linspace(0, num_classes - 1, steps = num_classes).view(1, -1, 1, 1).repeat(bs, 1, H, W).to(device)
+        mask = label != 0 # (1, H, W)
+        return mask.squeeze() # tensor
+
 def train_posecnn(data_dir, batch_size=2, num_classes=10, device="cuda"):
     # TODO set download to True if dataset doesn't exist
     train_dataset = PROPSPoseDataset(data_dir, "train", download=False) 
