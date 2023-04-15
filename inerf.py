@@ -174,13 +174,35 @@ def run_inerf(_overlay=False, _debug=False):
     if _debug:
         show_img("Observed image", obs_img_noised)
 
-    # find points of interest of the observed image
-    POI = find_POI(obs_img_noised, _debug)  # xy pixel coordinates of points of interest (N x 2)
+    ################### Start ###################
+    # bbx: size: (N,4) with (x1, y1, x2, y2); (x1, y1) is the top left corner of the bounding box and (x2, y2) is the bottom right corner of the bounding box.
+    if posecnn_init_pose:
+        from pose_cnn import getBbx
+        bbx = getBbx(label)
+        for ii in range(bbx.shape[0]):
+            x1, y1, x2, y2 = int(bbx[ii, 0]), int(bbx[ii, 1]), int(bbx[ii, 2]), int(bbx[ii, 3])
+
+            x = np.arange(x1, x2+1, 1)
+            y = np.arange(y1, y2+1, 1)
+            xx, yy = np.meshgrid(x, y)
+
+            obj = np.c_[xx.ravel(), yy.ravel()]
+
+            if ii == 0: 
+                POI = obj
+            else:
+                POI = np.concatenate((POI, obj), axis=0)
+    ################### End ###################
+
+    else:
+        # find points of interest of the observed image
+        POI = find_POI(obs_img_noised, _debug)  # xy pixel coordinates of points of interest (N x 2)
+
     obs_img_noised = (np.array(obs_img_noised) / 255.).astype(np.float32)
 
     # create meshgrid from the observed image
     coords = np.asarray(np.stack(np.meshgrid(np.linspace(0, W - 1, W), np.linspace(0, H - 1, H)), -1),
-                        dtype=int)
+                            dtype=int)
 
     # create sampling mask for interest region sampling strategy
     interest_regions = np.zeros((H, W, ), dtype=np.uint8)
