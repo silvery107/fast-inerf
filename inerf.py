@@ -186,21 +186,22 @@ def run_inerf(_overlay=False, _debug=False):
             y = np.arange(y1, y2+1, 1)
             xx, yy = np.meshgrid(x, y)
 
-            coords = np.c_[xx.ravel(), yy.ravel()]
+            obj = np.c_[xx.ravel(), yy.ravel()]
 
             if ii == 0: 
-                POI = coords
+                POI = obj
             else:
-                POI = np.concatenate((POI, coords), axis=0)
+                POI = np.concatenate((POI, obj), axis=0)
     ################### End ###################
 
     else:
         # find points of interest of the observed image
         POI = find_POI(obs_img_noised, _debug)  # xy pixel coordinates of points of interest (N x 2)
-        obs_img_noised = (np.array(obs_img_noised) / 255.).astype(np.float32)
 
-        # create meshgrid from the observed image
-        coords = np.asarray(np.stack(np.meshgrid(np.linspace(0, W - 1, W), np.linspace(0, H - 1, H)), -1),
+    obs_img_noised = (np.array(obs_img_noised) / 255.).astype(np.float32)
+
+    # create meshgrid from the observed image
+    coords = np.asarray(np.stack(np.meshgrid(np.linspace(0, W - 1, W), np.linspace(0, H - 1, H)), -1),
                             dtype=int)
 
     # create sampling mask for interest region sampling strategy
