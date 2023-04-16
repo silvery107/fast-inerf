@@ -11,6 +11,8 @@ torch.autograd.set_detect_anomaly(True)
 from utils.faster_inerf_utils import load_init_pose
 import torchvision.models as models
 from pose_cnn import PoseCNN
+from numpy import savetxt
+import matplotlib.pyplot as plt
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
@@ -252,6 +254,8 @@ def run_inerf(_overlay=False, _debug=False):
     if _overlay is True:
         imgs = []
 
+    err = np.array([[0, 0, 0, 0]])
+
     for k in range(600):
 
         if sampling_strategy == 'random':
@@ -321,6 +325,9 @@ def run_inerf(_overlay=False, _debug=False):
                 print('Translation error: ', translation_error)
                 print('-----------------------------------')
 
+                err = np.array([[k, loss, rot_error, translation_error]])
+                errors = np.concatenate((errors, err), axis=0)
+
             if _overlay is True:
                 with torch.no_grad():
                     rgb, disp, acc, _ = render(H, W, focal, chunk=args.chunk, c2w=pose[:3, :4], **render_kwargs)
@@ -331,6 +338,25 @@ def run_inerf(_overlay=False, _debug=False):
                     dst = cv2.addWeighted(rgb8, 0.7, ref, 0.3, 0)
                     imageio.imwrite(filename, dst)
                     imgs.append(dst)
+
+    savetxt('data.csv', errors, delimiter=',')
+
+    ## load data and read
+    training_history = np.loadtxt("data.csv", delimiter=",", dtype=float)
+    ks = training_history[1:, 0]
+    losses = training_history[1:, 1]
+    rot_errors = training_history[1:, 2]
+    translation_errors = training_history[1:, 3]
+
+    plt.figure()
+    plt.plot(ks, losses)
+    plt.savefig('loss.png')
+    plt.figure()
+    plt.plot(ks, rot_errors)
+    plt.savefig('rotationError.png')
+    plt.figure()
+    plt.plot(ks, translation_errors)
+    plt.savefig('translationError.png')
 
     if _overlay is True:
         imageio.mimwrite(os.path.join(testsavedir, 'video.gif'), imgs, fps=8) #quality = 8 for mp4 format
