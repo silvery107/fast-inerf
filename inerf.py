@@ -201,12 +201,14 @@ def run_inerf(_overlay=False, _debug=False):
         obj_mask = getSegMask(label).cpu().numpy() # (H, W)
         seg_index = obj_mask.nonzero()
         POI = np.stack([seg_index[1], seg_index[0]], axis=1)
+        print(f"POI: {POI.shape}")
 
     ################### End ###################
 
     else:
         # find points of interest of the observed image
         POI = find_POI(obs_img_noised, _debug)  # xy pixel coordinates of points of interest (N x 2)
+        print(f"POI: {POI.shape}")
 
     obs_img_noised = (np.array(obs_img_noised) / 255.).astype(np.float32)
 
@@ -257,7 +259,7 @@ def run_inerf(_overlay=False, _debug=False):
 
     errors = np.array([[0, 0, 0, 0]])
 
-    for k in range(100):
+    for k in range(200):
 
         if sampling_strategy == 'random':
             rand_inds = np.random.choice(coords.shape[0], size=batch_size, replace=False)
@@ -326,8 +328,8 @@ def run_inerf(_overlay=False, _debug=False):
                 print('Translation error: ', translation_error)
                 print('-----------------------------------')
 
-                err = np.array([[k, loss.item(), rot_error, translation_error]])
-                errors = np.concatenate((errors, err), axis=0)
+                # err = np.array([[k, loss.item(), rot_error, translation_error]])
+                # errors = np.concatenate((errors, err), axis=0)
 
             if _overlay is True:
                 with torch.no_grad():
@@ -339,6 +341,9 @@ def run_inerf(_overlay=False, _debug=False):
                     dst = cv2.addWeighted(rgb8, 0.7, ref, 0.3, 0)
                     imageio.imwrite(filename, dst)
                     imgs.append(dst)
+
+        err = np.array([[k, loss.item(), rot_error, translation_error]])
+        errors = np.concatenate((errors, err), axis=0)
 
     t = int(time())
     savetxt(f'logs/{t}_data.csv', errors, delimiter=',')
