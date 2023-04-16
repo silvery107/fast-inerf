@@ -13,7 +13,7 @@ from utils.nerf_utils import load_blender_data, config_parser, load_llff_data
 
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
 DEBUG = False
 
@@ -36,9 +36,9 @@ class Embedder:
         N_freqs = self.kwargs['num_freqs']
 
         if self.kwargs['log_sampling']:
-            freq_bands = 2. ** torch.linspace(0., max_freq, steps=N_freqs)
+            freq_bands = 2. ** torch.linspace(0., max_freq, steps=N_freqs, device=device)
         else:
-            freq_bands = torch.linspace(2. ** 0., 2. ** max_freq, steps=N_freqs)
+            freq_bands = torch.linspace(2. ** 0., 2. ** max_freq, steps=N_freqs, device=device)
 
         for freq in freq_bands:
             for p_fn in self.kwargs['periodic_fns']:
@@ -443,20 +443,20 @@ def train():
             pose = poses[img_i, :3,:4]
 
             if N_rand is not None:
-                rays_o, rays_d = get_rays(H, W, focal, torch.Tensor(pose))  # (H, W, 3), (H, W, 3)
+                rays_o, rays_d = get_rays(H, W, focal, torch.Tensor(pose).to(device))  # (H, W, 3), (H, W, 3)
 
                 if i < args.precrop_iters:
                     dH = int(H//2 * args.precrop_frac)
                     dW = int(W//2 * args.precrop_frac)
                     coords = torch.stack(
                         torch.meshgrid(
-                            torch.linspace(H//2 - dH, H//2 + dH - 1, 2*dH), 
-                            torch.linspace(W//2 - dW, W//2 + dW - 1, 2*dW)
+                            torch.linspace(H//2 - dH, H//2 + dH - 1, 2*dH, device=device), 
+                            torch.linspace(W//2 - dW, W//2 + dW - 1, 2*dW, device=device)
                         ), -1)
                     if i == start:
                         print(f"[Config] Center cropping of size {2*dH} x {2*dW} is enabled until iter {args.precrop_iters}")                
                 else:
-                    coords = torch.stack(torch.meshgrid(torch.linspace(0, H-1, H), torch.linspace(0, W-1, W)), -1)  # (H, W, 2)
+                    coords = torch.stack(torch.meshgrid(torch.linspace(0, H-1, H, device=device), torch.linspace(0, W-1, W, device=device)), -1)  # (H, W, 2)
 
                 coords = torch.reshape(coords, [-1,2])  # (H * W, 2)
                 select_inds = np.random.choice(coords.shape[0], size=[N_rand], replace=False)  # (N_rand,)

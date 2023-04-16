@@ -16,7 +16,8 @@ to8b = lambda x : (255*np.clip(x,0,1)).astype(np.uint8)
 
 # Ray helpers
 def get_rays(H, W, focal, c2w):
-    i, j = torch.meshgrid(torch.linspace(0, W-1, W), torch.linspace(0, H-1, H))  # pytorch's meshgrid has indexing='ij'
+    i, j = torch.meshgrid(torch.linspace(0, W-1, W, device=c2w.device), 
+                          torch.linspace(0, H-1, H, device=c2w.device))  # pytorch's meshgrid has indexing='ij'
     i = i.t()
     j = j.t()
     dirs = torch.stack([(i-W*.5)/focal, -(j-H*.5)/focal, -torch.ones_like(i)], -1)
@@ -68,7 +69,7 @@ def sample_pdf(bins, weights, N_samples, det=False, pytest=False):
 
     # Take uniform samples
     if det:
-        u = torch.linspace(0., 1., steps=N_samples)
+        u = torch.linspace(0., 1., steps=N_samples, device=weights.device)
         u = u.expand(list(cdf.shape[:-1]) + [N_samples])
     else:
         u = torch.rand(list(cdf.shape[:-1]) + [N_samples])
@@ -78,7 +79,7 @@ def sample_pdf(bins, weights, N_samples, det=False, pytest=False):
         np.random.seed(0)
         new_shape = list(cdf.shape[:-1]) + [N_samples]
         if det:
-            u = np.linspace(0., 1., N_samples)
+            u = np.linspace(0., 1., N_samples, device=weights.device)
             u = np.broadcast_to(u, new_shape)
         else:
             u = np.random.rand(*new_shape)
@@ -120,7 +121,7 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
     raw2alpha = lambda raw, dists, act_fn=F.relu: 1.-torch.exp(-act_fn(raw)*dists)
 
     dists = z_vals[...,1:] - z_vals[...,:-1]
-    dists = torch.cat([dists, torch.Tensor([1e10]).expand(dists[...,:1].shape)], -1)  # [N_rays, N_samples]
+    dists = torch.cat([dists, torch.Tensor([1e10]).to(raw.device).expand(dists[...,:1].shape)], -1)  # [N_rays, N_samples]
 
     dists = dists * torch.norm(rays_d[...,None,:], dim=-1)
 
@@ -137,7 +138,7 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
 
     alpha = raw2alpha(raw[...,3] + noise, dists)  # [N_rays, N_samples]
     # weights = alpha * tf.math.cumprod(1.-alpha + 1e-10, -1, exclusive=True)
-    weights = alpha * torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1)), 1.-alpha + 1e-10], -1), -1)[:, :-1]
+    weights = alpha * torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1), device=raw.device), 1.-alpha + 1e-10], -1), -1)[:, :-1]
     rgb_map = torch.sum(weights[...,None] * rgb, -2)  # [N_rays, 3]
 
     depth_map = torch.sum(weights * z_vals, -1)
@@ -199,7 +200,7 @@ def render_rays(ray_batch,
     bounds = torch.reshape(ray_batch[...,6:8], [-1,1,2])
     near, far = bounds[...,0], bounds[...,1] # [-1,1]
 
-    t_vals = torch.linspace(0., 1., steps=N_samples)
+    t_vals = torch.linspace(0., 1., steps=N_samples, device=ray_batch.device)
     if not lindisp:
         z_vals = near * (1.-t_vals) + far * (t_vals)
     else:

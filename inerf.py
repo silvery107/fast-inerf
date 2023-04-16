@@ -12,7 +12,7 @@ from utils.faster_inerf_utils import load_init_pose
 import torchvision.models as models
 from pose_cnn import PoseCNN
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
 
 def load_nerf(args, device):
@@ -134,7 +134,8 @@ def run_inerf(_overlay=False, _debug=False):
 
         # pose_dict[0]: {class_label : 4x4 pose matrix, ...}
         # label[0]:     (H, W) pixel class label
-        pose_dict, label = posecnn_model(inputdict) 
+        with torch.no_grad():
+            pose_dict, label = posecnn_model(inputdict) 
 
         start_pose = load_init_pose(pose_dict[0], label[0], start_pose)
         # import matplotlib.pyplot as plt
@@ -234,7 +235,7 @@ def run_inerf(_overlay=False, _debug=False):
 
     # Create pose transformation model
     start_pose = torch.Tensor(start_pose).to(device)
-    cam_transf = camera_transf().to(device)
+    cam_transf = camera_transf(device).to(device)
     optimizer = torch.optim.Adam(params=cam_transf.parameters(), lr=lrate, betas=(0.9, 0.999))
 
     # calculate angles and translation of the observed image's pose
@@ -289,7 +290,8 @@ def run_inerf(_overlay=False, _debug=False):
                                         **render_kwargs)
 
         optimizer.zero_grad()
-        loss = img2mse(rgb, target_s)
+        # print(rgb.shape, target_s.shape)
+        loss = img2mse(rgb, target_s) # (batch_size, 3)
         loss.backward()
         optimizer.step()
 
