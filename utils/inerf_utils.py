@@ -8,7 +8,7 @@ import os
 
 def vec2ss_matrix(vector):  # vector to skewsym. matrix
 
-    ss_matrix = torch.zeros((3,3))
+    ss_matrix = torch.zeros((3,3), device=vector.device)
     ss_matrix[0, 1] = -vector[2]
     ss_matrix[0, 2] = vector[1]
     ss_matrix[1, 0] = vector[2]
@@ -20,17 +20,18 @@ def vec2ss_matrix(vector):  # vector to skewsym. matrix
 
 
 class camera_transf(nn.Module):
-    def __init__(self):
+    def __init__(self, device):
         super(camera_transf, self).__init__()
         self.w = nn.Parameter(torch.normal(0., 1e-6, size=(3,)))
         self.v = nn.Parameter(torch.normal(0., 1e-6, size=(3,)))
         self.theta = nn.Parameter(torch.normal(0., 1e-6, size=()))
+        self.device = device
 
     def forward(self, x):
-        exp_i = torch.zeros((4,4))
+        exp_i = torch.zeros((4,4), device=self.device)
         w_skewsym = vec2ss_matrix(self.w)
-        exp_i[:3, :3] = torch.eye(3) + torch.sin(self.theta) * w_skewsym + (1 - torch.cos(self.theta)) * torch.matmul(w_skewsym, w_skewsym)
-        exp_i[:3, 3] = torch.matmul(torch.eye(3) * self.theta + (1 - torch.cos(self.theta)) * w_skewsym + (self.theta - torch.sin(self.theta)) * torch.matmul(w_skewsym, w_skewsym), self.v)
+        exp_i[:3, :3] = torch.eye(3, device=self.device) + torch.sin(self.theta) * w_skewsym + (1 - torch.cos(self.theta)) * torch.matmul(w_skewsym, w_skewsym)
+        exp_i[:3, 3] = torch.matmul(torch.eye(3, device=self.device) * self.theta + (1 - torch.cos(self.theta)) * w_skewsym + (self.theta - torch.sin(self.theta)) * torch.matmul(w_skewsym, w_skewsym), self.v)
         exp_i[3, 3] = 1.
         T_i = torch.matmul(exp_i, x)
         return T_i
@@ -139,6 +140,13 @@ def config_parser():
     parser.add_argument("--delta_brightness", type=float, default=0.0,
                         help='reduce/increase brightness of the observed image, value is in [-1...1]')
 
+    # PoseCNN integration
+    parser.add_argument("--posecnn_dir", type=str, default='./checkpoints/',
+                        help='directory of posecnn model')
+    
+    parser.add_argument("--posecnn_init_pose", action="store_true",
+                        help='utlize posecnn to get initial pose')
+    parser.add_argument("--mask_region", action="store_true")
     return parser
 
 rot_psi = lambda phi: np.array([
@@ -192,6 +200,14 @@ def load_blender(data_dir, model_name, obs_img_num, half_res, white_bkgd, *kwarg
     obs_img_pose = np.array(frames[obs_img_num]['transform_matrix']).astype(np.float32)
     phi, theta, psi, t = kwargs
     start_pose =  trans_t(t) @ rot_phi(phi/180.*np.pi) @ rot_theta(theta/180.*np.pi) @ rot_psi(psi/180.*np.pi)  @ obs_img_pose
+
+    # print("poses: ", poses.shape)
+    print("obs_img_num: ", obs_img_num)
+    # print("obs_img: ", obs_img.shape)
+    # print("obs_img_pose: ", poses[obs_img_num])
+    print("obs_img_pose:\n", obs_img_pose)
+    print("start_pose:\n", start_pose)
+
     return img_rgb, [H, W, focal], start_pose, obs_img_pose # image of type uint8
 
 
@@ -454,4 +470,11 @@ def load_llff_data(data_dir, model_name, obs_img_num, *kwargs, factor=8, recente
     obs_img_pose = np.concatenate((poses[obs_img_num], np.array([[0,0,0,1.]])), axis=0)
     phi, theta, psi, t = kwargs
     start_pose = rot_phi(phi/180.*np.pi) @ rot_theta(theta/180.*np.pi) @ rot_psi(psi/180.*np.pi) @ trans_t(t) @ obs_img_pose
+
+    print("poses: ", poses.shape)
+    print("obs_img_num: ", obs_img_num)
+    print("obs_img: ", obs_img.shape)
+    print("obs_img_pose: ", poses[obs_img_num])
+    print("obs_img_pose: ", obs_img_pose)
+    print("start_pose: ", start_pose)
     return obs_img, hwf, start_pose, obs_img_pose, bds

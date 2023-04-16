@@ -2,12 +2,12 @@
 
 ## TODO
 
-- [ ] Do sampling only on pixels within an object, using masks of each object class from PoseCNN
-- [ ] Set a initial guess of camera pose, using the estimated object pose from PoseCNN
+- [x] Do sampling only on pixels within an object, using masks of each object class from PoseCNN
+- [x] Set a initial guess of camera pose, using the estimated object pose from PoseCNN
 - [x] Generate PROPS-NeRF dataset, using [this script](https://github.com/NVlabs/instant-ngp/blob/master/scripts/colmap2nerf.py) to transfer image sequences to a NeRF datatset. Dataset can be downloaded on drive under `data` folder.
 - [x] Train a NeRF model on PROPS Datatset, using `nerf-pytorch` repo
 
-#### Test Scripts
+#### Scripts
 - `python tests/test_posecnn.py` for training and evaluating PoseCNN
 - `python tests/test_inerf.py --config configs/inerf/PROPS.txt` for optimizing iNeRF
 - `python tests/test_nerf.py --config configs/nerf/PROPS.txt` for training NeRF
@@ -69,7 +69,7 @@ After training for 100k iterations (~4 hours on a single 2080 Ti), you can find 
 To test NeRF trained on different datasets: 
 
 ```
-python tests/test_nerf.py --config configs/lego.txt --render_only
+python tests/test_nerf.py --config configs/nerf/lego.txt --render_only
 ```
 
 **Pre-trained Models**

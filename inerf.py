@@ -8,9 +8,15 @@ from nerf import NeRF, get_embedder, run_network
 from utils.inerf_utils import config_parser, load_blender, show_img, find_POI, load_llff_data, camera_transf
 from utils.render_utils import render, get_rays, to8b, img2mse
 torch.autograd.set_detect_anomaly(True)
+from utils.faster_inerf_utils import load_init_pose
+import torchvision.models as models
+from pose_cnn import PoseCNN
+from numpy import savetxt
+import matplotlib.pyplot as plt
+from time import time
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-np.random.seed(0)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# np.random.seed(0)
 
 def load_nerf(args, device):
     """Instantiate NeRF's MLP model.
@@ -86,6 +92,8 @@ def run_inerf(_overlay=False, _debug=False):
     delta_phi, delta_theta, delta_psi, delta_t = args.delta_phi, args.delta_theta, args.delta_psi, args.delta_t
     noise, sigma, amount = args.noise, args.sigma, args.amount
     delta_brightness = args.delta_brightness
+    posecnn_dir = args.posecnn_dir
+    posecnn_init_pose = args.posecnn_init_pose
 
     # Load and pre-process an observed image
     # obs_img -> rgb image with elements in range 0...255
@@ -107,6 +115,36 @@ def run_inerf(_overlay=False, _debug=False):
             far = 1.
 
     obs_img = (np.array(obs_img) / 255.).astype(np.float32)
+    
+    if posecnn_init_pose:
+        # PROPS Pose dataset intrinsic TODO: should be parsed in
+        cam_intrinsic = np.array([
+                            [902.19, 0.0, 342.35],
+                            [0.0, 902.39, 252.23],
+                            [0.0, 0.0, 1.0]])
+        
+        # Load trained posecnn model  
+        vgg16 = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1)
+        posecnn_model = PoseCNN(pretrained_backbone = vgg16, 
+                        models_pcd = None,
+                        cam_intrinsic = cam_intrinsic).to(device)
+        posecnn_model.load_state_dict(torch.load(os.path.join(posecnn_dir, "posecnn_model.pth")))
+        posecnn_model.eval()
+
+        # Prepare rgb as posecnn input format
+        pose_cnn_rgb = torch.tensor(obs_img.transpose((2,0,1))[None, :]).to(device)
+        inputdict = {'rgb': pose_cnn_rgb}
+
+        # pose_dict[0]: {class_label : 4x4 pose matrix, ...}
+        # label[0]:     (H, W) pixel class label
+        with torch.no_grad():
+            pose_dict, label = posecnn_model(inputdict) 
+
+        start_pose = load_init_pose(pose_dict[0], label[0], start_pose)
+        # import matplotlib.pyplot as plt
+        # plt.imshow(prediction.transpose((1,2,0)))
+        # plt.show()
+
 
     # change brightness of the observed image (to test robustness of inerf)
     if delta_brightness != 0:
@@ -140,19 +178,50 @@ def run_inerf(_overlay=False, _debug=False):
     if _debug:
         show_img("Observed image", obs_img_noised)
 
-    # find points of interest of the observed image
-    POI = find_POI(obs_img_noised, _debug)  # xy pixel coordinates of points of interest (N x 2)
+    ################### Start ###################
+    # bbx: size: (N,4) with (x1, y1, x2, y2)
+    # (x1, y1) is the top left corner of the bounding box 
+    # (x2, y2) is the bottom right corner of the bounding box.
+    if args.mask_region:
+        from pose_cnn import getBbx, getSegMask
+        # bbx = getBbx(label)
+        # for ii in range(bbx.shape[0]):
+        #     x1, y1, x2, y2 = int(bbx[ii, 0]), int(bbx[ii, 1]), int(bbx[ii, 2]), int(bbx[ii, 3])
+
+        #     x = np.arange(x1, x2+1, 1)
+        #     y = np.arange(y1, y2+1, 1)
+        #     xx, yy = np.meshgrid(x, y)
+
+        #     obj = np.c_[yy.ravel(), xx.ravel()]
+
+        #     if ii == 0: 
+        #         POI = obj
+        #     else:
+        #         POI = np.concatenate((POI, obj), axis=0)
+        obj_mask = getSegMask(label).cpu().numpy() # (H, W)
+        seg_index = obj_mask.nonzero()
+        POI = np.stack([seg_index[1], seg_index[0]], axis=1)
+        print(f"POI: {POI.shape}")
+
+    ################### End ###################
+
+    else:
+        # find points of interest of the observed image
+        POI = find_POI(obs_img_noised, _debug)  # xy pixel coordinates of points of interest (N x 2)
+        print(f"POI: {POI.shape}")
+
     obs_img_noised = (np.array(obs_img_noised) / 255.).astype(np.float32)
 
     # create meshgrid from the observed image
     coords = np.asarray(np.stack(np.meshgrid(np.linspace(0, W - 1, W), np.linspace(0, H - 1, H)), -1),
-                        dtype=int)
+                            dtype=int)
 
     # create sampling mask for interest region sampling strategy
     interest_regions = np.zeros((H, W, ), dtype=np.uint8)
     interest_regions[POI[:,1], POI[:,0]] = 1
-    I = args.dil_iter
-    interest_regions = cv2.dilate(interest_regions, np.ones((kernel_size, kernel_size), np.uint8), iterations=I)
+    if not args.mask_region:
+        I = args.dil_iter
+        interest_regions = cv2.dilate(interest_regions, np.ones((kernel_size, kernel_size), np.uint8), iterations=I)
     interest_regions = np.array(interest_regions, dtype=bool)
     interest_regions = coords[interest_regions]
 
@@ -171,7 +240,7 @@ def run_inerf(_overlay=False, _debug=False):
 
     # Create pose transformation model
     start_pose = torch.Tensor(start_pose).to(device)
-    cam_transf = camera_transf().to(device)
+    cam_transf = camera_transf(device).to(device)
     optimizer = torch.optim.Adam(params=cam_transf.parameters(), lr=lrate, betas=(0.9, 0.999))
 
     # calculate angles and translation of the observed image's pose
@@ -184,11 +253,13 @@ def run_inerf(_overlay=False, _debug=False):
     testsavedir = os.path.join(output_dir, model_name)
     os.makedirs(testsavedir, exist_ok=True)
 
-    # imgs - array with images are used to create a video of optimization process
+    # TODO save imgs to a valid gif or mp4 format
     if _overlay is True:
         imgs = []
 
-    for k in range(300):
+    errors = np.array([[0, 0, 0, 0]])
+
+    for k in range(200):
 
         if sampling_strategy == 'random':
             rand_inds = np.random.choice(coords.shape[0], size=batch_size, replace=False)
@@ -226,7 +297,8 @@ def run_inerf(_overlay=False, _debug=False):
                                         **render_kwargs)
 
         optimizer.zero_grad()
-        loss = img2mse(rgb, target_s)
+        # print(rgb.shape, target_s.shape)
+        loss = img2mse(rgb, target_s) # (batch_size, 3)
         loss.backward()
         optimizer.step()
 
@@ -236,7 +308,7 @@ def run_inerf(_overlay=False, _debug=False):
 
         if (k + 1) % 20 == 0 or k == 0:
             print('Step: ', k)
-            print('Loss: ', loss)
+            print('Loss: ', loss.item())
 
             with torch.no_grad():
                 pose_dummy = pose.cpu().detach().numpy()
@@ -256,6 +328,9 @@ def run_inerf(_overlay=False, _debug=False):
                 print('Translation error: ', translation_error)
                 print('-----------------------------------')
 
+                # err = np.array([[k, loss.item(), rot_error, translation_error]])
+                # errors = np.concatenate((errors, err), axis=0)
+
             if _overlay is True:
                 with torch.no_grad():
                     rgb, disp, acc, _ = render(H, W, focal, chunk=args.chunk, c2w=pose[:3, :4], **render_kwargs)
@@ -267,6 +342,28 @@ def run_inerf(_overlay=False, _debug=False):
                     imageio.imwrite(filename, dst)
                     imgs.append(dst)
 
-    # TODO save imgs to a valid gif or mp4 format
-    # if _overlay is True:
-    #     imageio.mimwrite(os.path.join(testsavedir, 'video.gif'), imgs, fps=8) #quality = 8 for mp4 format
+        err = np.array([[k, loss.item(), rot_error, translation_error]])
+        errors = np.concatenate((errors, err), axis=0)
+
+    t = int(time())
+    savetxt(f'logs/{t}_data.csv', errors, delimiter=',')
+
+    # ## load data and read
+    # training_history = np.loadtxt("data.csv", delimiter=",", dtype=float)
+    # ks = training_history[1:, 0]
+    # losses = training_history[1:, 1]
+    # rot_errors = training_history[1:, 2]
+    # translation_errors = training_history[1:, 3]
+
+    # plt.figure()
+    # plt.plot(ks, losses)
+    # plt.savefig('loss.png')
+    # plt.figure()
+    # plt.plot(ks, rot_errors)
+    # plt.savefig('rotationError.png')
+    # plt.figure()
+    # plt.plot(ks, translation_errors)
+    # plt.savefig('translationError.png')
+
+    if _overlay is True:
+        imageio.mimwrite(os.path.join(testsavedir, 'video.gif'), imgs, fps=8) #quality = 8 for mp4 format
