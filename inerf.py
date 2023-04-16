@@ -15,7 +15,7 @@ from numpy import savetxt
 import matplotlib.pyplot as plt
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-np.random.seed(0)
+# np.random.seed(0)
 
 def load_nerf(args, device):
     """Instantiate NeRF's MLP model.
@@ -254,9 +254,9 @@ def run_inerf(_overlay=False, _debug=False):
     if _overlay is True:
         imgs = []
 
-    err = np.array([[0, 0, 0, 0]])
+    errors = np.array([[0, 0, 0, 0]])
 
-    for k in range(600):
+    for k in range(100):
 
         if sampling_strategy == 'random':
             rand_inds = np.random.choice(coords.shape[0], size=batch_size, replace=False)
@@ -325,7 +325,7 @@ def run_inerf(_overlay=False, _debug=False):
                 print('Translation error: ', translation_error)
                 print('-----------------------------------')
 
-                err = np.array([[k, loss, rot_error, translation_error]])
+                err = np.array([[k, loss.item(), rot_error, translation_error]])
                 errors = np.concatenate((errors, err), axis=0)
 
             if _overlay is True:
