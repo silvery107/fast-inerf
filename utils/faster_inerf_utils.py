@@ -21,10 +21,16 @@ def load_init_pose(pose_dict, label, est_pose):
     # distance between camera and object 
     # dist = np.linalg.norm([-2.296917, -0.12373751, 3.310417])
     dist = np.linalg.norm(t_cam_obj)
+    print(f"Got posecnn dist: {dist}")
+    print(f"Got nerf distL {np.linalg.norm(est_pose[:3, -1])}")
 
-    est_trans = np.sqrt(dist**2 - est_pose[1][3]**2 - est_pose[0][3]**2)
-    print("calculated x: ", est_trans)
-    est_pose[2][3] = est_trans # z
+    est_trans_x = np.sqrt(np.maximum(dist**2 - est_pose[2][3]**2 - est_pose[1][3]**2, 0.))
+    est_trans_y = np.sqrt(np.maximum(dist**2 - est_pose[2][3]**2 - est_pose[0][3]**2, 0.))
+    est_trans_z = np.sqrt(np.maximum(dist**2 - est_pose[0][3]**2 - est_pose[1][3]**2, 0.))
+    print("calculated est_trans: ", est_trans_x, est_trans_y, est_trans_z)
+    # est_pose[0][3] = est_trans_x
+    # est_pose[1][3] = est_trans_y
+    est_pose[2][3] = est_trans_z
     print("calculated start pose: \n", est_pose)
 
     R_obj_cam = R_cam_obj.T                                     # rotation matrix from object to camera
@@ -34,9 +40,10 @@ def load_init_pose(pose_dict, label, est_pose):
     start_pose = np.hstack((R_obj_cam, P_obj_cam.reshape(3, 1))) # 3x4 matrix
     start_pose = np.vstack((start_pose, np.array([0, 0, 0, 1]))) # 4x4 matrix
     # start_pose = rot_phi(np.pi/2) @ rot_psi(np.pi/2) @ start_pose # obs_img 0
-    start_pose = rot_psi(np.pi/2) @ start_pose # obs_img 2
+    # start_pose = rot_psi(np.pi/2) @ start_pose # obs_img 2
+    # start_pose = start_pose @ rot_phi(np.pi/2) @ rot_theta(-np.pi/2) # obs_img 3
     start_pose[:3, -1] = est_pose[:3, -1]
     print("Posecnn pose\n", start_pose)
 
-    # return start_pose
-    return est_pose
+    # return start_pose # gt position
+    return est_pose # gt rotation
