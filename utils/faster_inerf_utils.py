@@ -13,7 +13,7 @@ def load_init_pose(pose_dict, label, est_pose):
     #     print(cl, t_cam_obj)
     
     R_cam_obj = pose_dict[2][0:3, 0:3]
-    t_cam_obj = pose_dict[2][0:3, -1] * 4
+    t_cam_obj = pose_dict[2][0:3, -1] / 0.33
 
     # task: for a picture, know {angles, z, y} of the camera 
     # find x
@@ -40,9 +40,9 @@ def load_init_pose(pose_dict, label, est_pose):
     start_pose = np.hstack((R_obj_cam, P_obj_cam.reshape(3, 1))) # 3x4 matrix
     start_pose = np.vstack((start_pose, np.array([0, 0, 0, 1]))) # 4x4 matrix
     # start_pose = rot_phi(np.pi/2) @ rot_psi(np.pi/2) @ start_pose # obs_img 0
-    # start_pose = rot_psi(np.pi/2) @ start_pose # obs_img 2
+    start_pose = rot_psi(np.pi/2) @ start_pose # obs_img 2
     # start_pose = start_pose @ rot_phi(np.pi/2) @ rot_theta(-np.pi/2) # obs_img 3
-    start_pose[:3, -1] = est_pose[:3, -1]
+    # start_pose[:3, -1] = est_pose[:3, -1]
     print("Posecnn pose\n", start_pose)
 
     # return start_pose # gt position

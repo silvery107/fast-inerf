@@ -1,16 +1,10 @@
-# Fast iNeRF
+# Single-Image to Camera Pose with Inverse NeRF and PoseCNN
 
-## TODO
-
-- [x] Do sampling only on pixels within an object, using masks of each object class from PoseCNN
-- [x] Set a initial guess of camera pose, using the estimated object pose from PoseCNN
-- [x] Generate PROPS-NeRF dataset, using [this script](https://github.com/NVlabs/instant-ngp/blob/master/scripts/colmap2nerf.py) to transfer image sequences to a NeRF datatset. Dataset can be downloaded on drive under `data` folder.
-- [x] Train a NeRF model on PROPS Datatset, using `nerf-pytorch` repo
 
 #### Scripts
-- `python tests/test_posecnn.py` for training and evaluating PoseCNN
-- `python tests/test_inerf.py --config configs/inerf/PROPS.txt` for optimizing iNeRF
-- `python tests/test_nerf.py --config configs/nerf/PROPS.txt` for training NeRF
+- `python scripts/run_posecnn.py` for training and evaluating PoseCNN
+- `python scripts/run_inerf.py --config configs/inerf/PROPS.txt` for optimizing iNeRF
+- `python scripts/run_nerf.py --config configs/nerf/PROPS.txt` for training NeRF
 
 ### [Project Page](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI&feature=emb_logo) | [Paper](https://arxiv.org/pdf/2012.05877.pdf)
 
@@ -38,7 +32,7 @@ Download `PROPS-Pose-Dataset` [here](https://drive.google.com/file/d/15rhwXhzHGK
 ## Quick Start for iNeRF
 To run the algorithm on _Lego_ object
 ```
-python tests/test_inerf.py --config configs/inerf/lego.txt
+python scripts/run_inerf.py --config configs/inerf/lego.txt
 ```
 If you want to store gif video of optimization process, set ```overlay = True```
 
@@ -59,7 +53,7 @@ All NeRF models were trained using this code [https://github.com/yenchenlin/nerf
 
 To train a low-res `lego` NeRF:
 ```
-python tests/test_nerf.py --config configs/nerf/lego.txt
+python scripts/run_nerf.py --config configs/nerf/lego.txt
 ```
 After training for 100k iterations (~4 hours on a single 2080 Ti), you can find the following video at `logs/lego_test/lego_test_spiral_100000_rgb.mp4`.
 
@@ -69,7 +63,7 @@ After training for 100k iterations (~4 hours on a single 2080 Ti), you can find 
 To test NeRF trained on different datasets: 
 
 ```
-python tests/test_nerf.py --config configs/nerf/lego.txt --render_only
+python scripts/run_nerf.py --config configs/nerf/lego.txt --render_only
 ```
 
 **Pre-trained Models**
@@ -94,7 +88,7 @@ Interest regions sampling strategy provides faster convergence and doesnt stick 
 
 ## Citation
 
-```
+```bib
 @inproceedings{yen2020inerf,
   title={{iNeRF}: Inverting Neural Radiance Fields for Pose Estimation},
   author={Lin Yen-Chen and Pete Florence and Jonathan T. Barron and Alberto Rodriguez and Phillip Isola and Tsung-Yi Lin},
