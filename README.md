@@ -4,8 +4,8 @@
 
 <img src="figures/system.png" width="800">
 
-<img src="figures/obs_imgs_2_trans_z_baseline.gif" width="400">
-<img src="figures/obs_imgs_2_trans_y_rot_mask.gif" width="400">
+<img src="figures/obs_imgs_2_trans_z_baseline.gif" width="300">
+<img src="figures/obs_imgs_2_trans_y_rot_mask.gif" width="300">
 
 > Left - **Interest Regions Sampling**; right - **Mask Region Sampling**. 
 > Mask regions sampling strategy provides faster convergence and doesnt stick in a local minimum like interest regions. 
@@ -72,7 +72,7 @@ To run the algorithm on the llff dataset, just download the "nerf_llff_data" fol
     ```
     After training for 100k iterations (~6 hours on a single RTX 3060 GPU), you can find the following video at `<logs>` folder. Set `--render_only` for evaluation render only.
 
-     <img src="figures/props_nerf.gif" width="400">
+     <img src="figures/props_nerf.gif" width="300">
 
 
 
