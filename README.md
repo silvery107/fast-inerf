@@ -4,8 +4,11 @@
 
 <img src="figures/system.png" width="800">
 
-<img src="figures/obs_imgs_2_trans_z_baseline.gif" width="300">
-<img src="figures/obs_imgs_2_trans_y_rot_mask.gif" width="300">
+<p align="left">
+<img src="figures/obs_imgs_2_trans_z_baseline.gif" width="400">
+
+<img src="figures/obs_imgs_2_trans_y_rot_mask.gif" width="400">
+</p>
 
 > Left - **Interest Regions Sampling**; right - **Mask Region Sampling**. 
 > Mask regions sampling strategy provides faster convergence and doesnt stick in a local minimum like interest regions. 
