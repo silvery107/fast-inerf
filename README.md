@@ -1,6 +1,6 @@
 # Single-Image to Camera Pose with iNeRF and PoseCNN
 
-- [ ] TODO add description
+We present an efficient and robust system for view synthesis and pose estimation by integrating PoseCNN and iNeRF. Our method leverages the pose and object segmentation predictions from PoseCNN to improve the initial camera pose estimation and accelerate the optimization process of camera pose estimation in iNeRF.
 
 <img src="figures/system.png" width="600">
 
