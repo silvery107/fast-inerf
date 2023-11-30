@@ -11,7 +11,7 @@ We present an efficient and robust system for view synthesis and pose estimation
 </p>
 
 > Left - **Interest Regions Sampling**; right - **Mask Region Sampling**. 
-> Mask regions sampling strategy provides faster convergence and doesnt stick in a local minimum like interest regions. 
+> Mask regions sampling strategy provides faster convergence and doesn't stick in a local minimum like interest regions. 
 
 
 #### Scripts
@@ -54,10 +54,10 @@ We present an efficient and robust system for view synthesis and pose estimation
 ### Enhanced iNeRF
 - To run the algorithm on PROPS NeRF
     ```
-    python scripts/run_inerf.py --config configs/inerf/PROPS.txt --posecnn_pose_init --mask_region
+    python scripts/run_inerf.py --config configs/inerf/PROPS.txt --posecnn_init_pose --mask_region
     ```
     If you want to store gif video of optimization process, set `--overlay`. 
-- Set `--posecnn_pose_init` will enable pose initialization using estimation from PoseCNN and set `--mask_region` will enable mask region sampling using segmentation mask from PoseCNN.
+- Set `--posecnn_init_pose` will enable pose initialization using estimation from PoseCNN and set `--mask_region` will enable mask region sampling using segmentation mask from PoseCNN.
 
 - All other parameters such as _batch size_, _sampling strategy_, _initial camera error_ you can adjust in corresponding config [files](https://github.com/silvery107/fast-iNeRF/tree/main/configs).
 <!-- 
@@ -97,7 +97,7 @@ To run the algorithm on the llff dataset, just download the "nerf_llff_data" fol
 - PyTorch >= 1.11
 - torchvision >= 0.12
 
-## Acknowlegment
+## Acknowledgment
 Thanks for their great open-source software
 - **NeRF** - *PyTorch implementation from* [yenchenlin/nerf-supervision-public](https://github.com/yenchenlin/nerf-supervision-public)
 - **iNeRF** - *Pytorch implementation from* [salykovaa/inerf](https://github.com/salykovaa/inerf)

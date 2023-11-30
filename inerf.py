@@ -8,7 +8,7 @@ from nerf import NeRF, get_embedder, run_network
 from utils.inerf_utils import config_parser, load_blender, show_img, find_POI, load_llff_data, camera_transf
 from utils.render_utils import render, get_rays, to8b, img2mse
 torch.autograd.set_detect_anomaly(True)
-from utils.faster_inerf_utils import load_init_pose
+from utils.fast_inerf_utils import load_init_pose
 import torchvision.models as models
 from pose_cnn import PoseCNN
 from numpy import savetxt
@@ -94,6 +94,7 @@ def run_inerf(_overlay=False, _debug=False):
     delta_brightness = args.delta_brightness
     posecnn_dir = args.posecnn_dir
     posecnn_init_pose = args.posecnn_init_pose
+    _overlay = args.overlay or _overlay
 
     # Load and pre-process an observed image
     # obs_img -> rgb image with elements in range 0...255

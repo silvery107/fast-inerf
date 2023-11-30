@@ -121,6 +121,7 @@ def config_parser():
                         help='Initial learning rate')
     parser.add_argument("--sampling_strategy", type=str, default='random',
                         help='options: random / interest_point / interest_region')
+    parser.add_argument("--overlay", action="store_true")
     # parameters to define initial pose
     parser.add_argument("--delta_psi", type=float, default=0.0,
                         help='Rotate camera around x axis')
